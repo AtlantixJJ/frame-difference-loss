@@ -1,4 +1,5 @@
 """
+[UNCLEAN]
 Train the SFN baseline model (without temporal loss)
 """
 import numpy as np

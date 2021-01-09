@@ -15,6 +15,7 @@ import transformer_net
 from vgg16 import Vgg16
 from flow_vis import flow_to_color
 
+
 def center_crop(x, h, w):
     # Assume x is (N, C, H, W)
     H, W = x.size()[2:]
@@ -24,10 +25,12 @@ def center_crop(x, h, w):
     ddh, ddw = dh // 2, dw // 2
     return x[:, :, ddh:-(dh-ddh), ddw:-(dw-ddw)]
 
+
 def weighted_mse(x, y, conf):
     diff = (x - y) * conf
     diff = diff * diff
     return diff.sum() / conf.sum()
+
 
 def warp(x, flo):
     """
@@ -64,6 +67,7 @@ def warp(x, flo):
     
     return output, mask
 
+
 def train(args):
   np.random.seed(args.seed)
   torch.manual_seed(args.seed)
@@ -89,9 +93,7 @@ def train(args):
     transformer = transformer_net.TransformerRNN(args.pad_type)
   else:
     transformer = transformer_net.TransformerNet(args.pad_type)
-  models = glob.glob(args.init_model_dir + "/epoch*.model")
-  models.sort()
-  model_path = models[-1]
+  model_path = args.init_model
   print("=> Load from model file %s" % model_path)
   transformer.load_state_dict(torch.load(model_path))
   transformer.train()
@@ -102,8 +104,8 @@ def train(args):
   l1_loss = torch.nn.SmoothL1Loss()
 
   vgg = Vgg16()
-  utils.init_vgg16(args.vgg_model_dir)
-  vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, "vgg16.weight")))
+  utils.init_vgg16(args.vgg_model)
+  vgg.load_state_dict(torch.load(os.path.join(args.vgg_model, "vgg16.weight")))
   vgg.eval()
 
   if args.cuda:
@@ -228,14 +230,13 @@ def train(args):
 
 def check_paths(args):
     try:
-        if not os.path.exists(args.vgg_model_dir):
-            os.makedirs(args.vgg_model_dir)
         if not os.path.exists(args.save_model_dir):
             os.makedirs(args.save_model_dir)
     except OSError as e:
         print(e)
         sys.exit(1)
         
+
 def main():
     main_arg_parser = argparse.ArgumentParser(description="parser for fast-neural-style (FDB)")
     subparsers = main_arg_parser.add_subparsers(title="subcommands", dest="subcommand")
@@ -247,7 +248,7 @@ def main():
                                   help="If to train use OFB loss")
     train_arg_parser.add_argument("--time-strength", type=float, default=1000.0,
                                   help="pixel OFB weight")
-    train_arg_parser.add_argument("--init-model-dir", type=str, default="../exprs/rnn/NetStyle1/",
+    train_arg_parser.add_argument("--init-model", type=str, default="",
                                   help="model dir")
     train_arg_parser.add_argument("--model-type", type=str, default="rnn", # rnn | sfn
                                   help="model dir")
@@ -291,6 +292,7 @@ def main():
     if args.subcommand == "train":
         check_paths(args)
         train(args)
+
 
 if __name__ == "__main__":
     main()

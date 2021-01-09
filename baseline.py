@@ -24,12 +24,8 @@ def center_crop(x, h, w):
 def train(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-
-    if args.cuda:
-        torch.cuda.manual_seed(args.seed)
-        kwargs = {'num_workers': 0, 'pin_memory': False}
-    else:
-        kwargs = {}
+    torch.cuda.manual_seed(args.seed)
+    kwargs = {'num_workers': 0, 'pin_memory': False}
 
     transform = transforms.Compose([
         transforms.Resize((
@@ -51,18 +47,16 @@ def train(args):
     vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, "vgg16.weight")))
     vgg.eval()
 
-    if args.cuda:
-        transformer = transformer.cuda()
-        vgg = vgg.cuda()
+    transformer = transformer.cuda()
+    vgg = vgg.cuda()
 
     style = utils.tensor_load_resize(args.style_image, args.style_size)
     style = style.unsqueeze(0)
     print("=> Style image size: " + str(style.size()))
 
     #(1, H, W, C)
-    style = utils.preprocess_batch(style)
-    if args.cuda: style = style.cuda()
-    utils.tensor_save_bgrimage(style[0].detach(), os.path.join(args.save_model_dir, 'train_style.jpg'), args.cuda)
+    style = utils.preprocess_batch(style).cuda()
+    utils.tensor_save_bgrimage(style[0].detach(), os.path.join(args.save_model_dir, 'train_style.jpg'), True)
     style = utils.subtract_imagenet_mean_batch(style)
     features_style = vgg(style)
     gram_style = [utils.gram_matrix(y).detach() for y in features_style]
@@ -80,18 +74,17 @@ def train(args):
 
 
             optimizer.zero_grad()
-            x = utils.preprocess_batch(x)
-            if args.cuda: x = x.cuda()
+            x = utils.preprocess_batch(x).cuda()
             y = transformer(x)
 
             if (batch_id + 1) % 1000 == 0:
                 idx = (batch_id + 1) // 1000
                 utils.tensor_save_bgrimage(y.data[0],
                     os.path.join(args.save_model_dir, "out_%d.png" % idx),
-                    args.cuda)
+                    True)
                 utils.tensor_save_bgrimage(x.data[0],
                     os.path.join(args.save_model_dir, "in_%d.png" % idx),
-                    args.cuda)
+                    True)
 
             xc = x.detach()
 
@@ -221,6 +214,7 @@ def stylize_multiple(args):
             del net
         utils.generate_video(args, dl)
         
+        
 def main():
     main_arg_parser = argparse.ArgumentParser(description="parser for training the stylization networks.")
     subparsers = main_arg_parser.add_subparsers(
@@ -243,7 +237,7 @@ def main():
         type=str, default="pretrained/",
         help="directory for vgg, if model is not present in the directory it is downloaded")
     train_arg_parser.add_argument("--save-model-dir",
-        type=str, default="exprs/NetStyle1",
+        type=str, default="exprs",
         help="path to folder where trained model will be saved.")
     train_arg_parser.add_argument("--style-image",
         type=str, default="data/styles/starry_night.jpg",

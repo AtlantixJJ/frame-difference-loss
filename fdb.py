@@ -27,12 +27,8 @@ def center_crop(x, h, w):
 def train(args):
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-
-    if args.cuda:
-        torch.cuda.manual_seed(args.seed)
-        kwargs = {'num_workers': 0, 'pin_memory': False}
-    else:
-        kwargs = {}
+    torch.cuda.manual_seed(args.seed)
+    kwargs = {'num_workers': 0, 'pin_memory': False}
 
     if args.model_type == "rnn":
         transformer = transformer_net.TransformerRNN(args.pad_type)
@@ -45,9 +41,7 @@ def train(args):
         seq_size=seq_size, interval=args.interval, use_flow=False)
     train_loader = DataLoader(train_dataset, batch_size=1, **kwargs)
 
-    models = glob.glob(args.init_model_dir + "/epoch*.model")
-    models.sort()
-    model_path = models[-1]
+    model_path = args.init_model
     print("=> Load from model file %s" % model_path)
     transformer.load_state_dict(torch.load(model_path))
     transformer.train()
@@ -58,15 +52,14 @@ def train(args):
     l1_loss = torch.nn.SmoothL1Loss()
 
     vgg = Vgg16()
-    utils.init_vgg16(args.vgg_model_dir)
-    vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, "vgg16.weight")))
+    utils.init_vgg16(args.vgg_model)
+    vgg.load_state_dict(torch.load(os.path.join(args.vgg_model)))
     vgg.eval()
 
-    if args.cuda:
-        transformer.cuda()
-        vgg.cuda()
-        mse_loss.cuda()
-        l1_loss.cuda()
+    transformer.cuda()
+    vgg.cuda()
+    mse_loss.cuda()
+    l1_loss.cuda()
 
     style = utils.tensor_load_resize(args.style_image, args.style_size)
     style = style.unsqueeze(0)
@@ -74,9 +67,8 @@ def train(args):
     print("=> Pixel FDB loss weight: %f" % args.time_strength1)
     print("=> Feature FDB loss weight: %f" % args.time_strength2)
 
-    style = utils.preprocess_batch(style)
-    if args.cuda: style = style.cuda()
-    utils.tensor_save_bgrimage(style[0].detach(), os.path.join(args.save_model_dir, 'train_style.jpg'), args.cuda)
+    style = utils.preprocess_batch(style).cuda()
+    utils.tensor_save_bgrimage(style[0].detach(), os.path.join(args.save_model_dir, 'train_style.jpg'), True)
     style = utils.subtract_imagenet_mean_batch(style)
     features_style = vgg(style)
     gram_style = [utils.gram_matrix(y).detach() for y in features_style]
@@ -91,8 +83,7 @@ def train(args):
             iters += 1
 
             optimizer.zero_grad()
-            x = utils.preprocess_batch(x) # (N, 3, 256, 256)
-            if args.cuda: x = x.cuda()
+            x = utils.preprocess_batch(x).cuda()
             y = transformer(x) # (N, 3, 256, 256)
 
             if (batch_id + 1) % 100 == 0:
@@ -100,10 +91,10 @@ def train(args):
                 for i in range(args.batch_size):
                     utils.tensor_save_bgrimage(y.data[i],
                         os.path.join(args.save_model_dir, "out_%02d_%02d.png" % (idx, i)),
-                        args.cuda)
+                        True)
                     utils.tensor_save_bgrimage(x.data[i],
                         os.path.join(args.save_model_dir, "in_%02d-%02d.png" % (idx, i)),
-                        args.cuda)
+                        True)
 
             xc = center_crop(x.detach(), y.shape[2], y.shape[3])
 
@@ -132,7 +123,7 @@ def train(args):
             # FDB
             pixel_fdb_loss = args.time_strength1 * mse_loss(y[1:] - y[:-1], xc[1:] - xc[:-1])
             # temporal content: 16th
-            feature_fdb_loss = args.time_strength2 * l1_loss(
+            feature_fdb_loss = args.time_strength2 * mse_loss(
                 features_y[2][1:] - features_y[2][:-1],
                 features_xc[2][1:] - features_xc[2][:-1])
 
@@ -168,13 +159,12 @@ def train(args):
 
 def check_paths(args):
     try:
-        if not os.path.exists(args.vgg_model_dir):
-            os.makedirs(args.vgg_model_dir)
         if not os.path.exists(args.save_model_dir):
             os.makedirs(args.save_model_dir)
     except OSError as e:
         print(e)
         sys.exit(1)
+
 
 def stylize_multiple(args):
     pad_types = args.pad_type.split(",")
@@ -219,6 +209,7 @@ def stylize_multiple(args):
             del net
         utils.generate_video(args, dl)
 
+
 def stylize(args):
   if ',' in args.pad_type:
     stylize_multiple(args)
@@ -250,6 +241,7 @@ def stylize(args):
     utils.process_dataloader(args, net, dl)
   utils.generate_video(args, dl)
 
+
 def main():
     main_arg_parser = argparse.ArgumentParser(description="parser for Frame Difference-Based (FDB) Temporal Loss experiments.")
     subparsers = main_arg_parser.add_subparsers(
@@ -259,10 +251,10 @@ def main():
         help="parser for training arguments")
     # loss
     train_arg_parser.add_argument("--time-strength1",
-        type=float, default=50.0,
+        type=float, default=10.0,
         help="pixel FDB weight")
     train_arg_parser.add_argument("--time-strength2",
-        type=float, default=950.0,
+        type=float, default=10.0,
         help="feature FDB weight")
     train_arg_parser.add_argument("--content-weight",
         type=float, default=1.0,
@@ -274,11 +266,11 @@ def main():
     train_arg_parser.add_argument("--dataset",
         type=str, default="data/DAVIS/train/JPEGImages/480p/",
         help="path to the DAVIS dataset")
-    train_arg_parser.add_argument("--init-model-dir",
-        type=str, default="exprs/NetStyle1/",
+    train_arg_parser.add_argument("--init-model",
+        type=str, default="",
         help="model dir")
-    train_arg_parser.add_argument("--vgg-model-dir",
-        type=str, default="pretrained/",
+    train_arg_parser.add_argument("--vgg-model",
+        type=str, default="pretrained/vgg16.weight",
         help="directory for vgg, if model is not present in the directory it is downloaded")
     train_arg_parser.add_argument("--save-model-dir",
         type=str, default="exprs/DiffStyle1",
