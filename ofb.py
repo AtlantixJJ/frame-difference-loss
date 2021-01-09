@@ -104,7 +104,6 @@ def train(args):
   l1_loss = torch.nn.SmoothL1Loss()
 
   vgg = Vgg16()
-  utils.init_vgg16(args.vgg_model)
   vgg.load_state_dict(torch.load(os.path.join(args.vgg_model, "vgg16.weight")))
   vgg.eval()
 

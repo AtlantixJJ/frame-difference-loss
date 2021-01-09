@@ -52,7 +52,6 @@ def train(args):
     l1_loss = torch.nn.SmoothL1Loss()
 
     vgg = Vgg16()
-    utils.init_vgg16(args.vgg_model)
     vgg.load_state_dict(torch.load(os.path.join(args.vgg_model)))
     vgg.eval()
 
@@ -164,82 +163,6 @@ def check_paths(args):
     except OSError as e:
         print(e)
         sys.exit(1)
-
-
-def stylize_multiple(args):
-    pad_types = args.pad_type.split(",")
-    load_paths = []
-    model_names = []
-    flags = []
-    for pad_type in pad_types:
-        expr_dirs = os.listdir(os.path.join(args.model_dir, pad_type))
-        expr_dirs.sort()
-        for expr_dir in expr_dirs:
-            models = glob.glob(os.path.join(args.model_dir, pad_type, expr_dir, "epoch*.model"))
-            models.sort()
-            print(os.path.join(args.model_dir, pad_type, expr_dir, "epoch*.model"))
-            try:
-                load_path = models[-1]
-            except IndexError:
-                continue
-            ind = load_path.find("Style")
-            sery = int(load_path[ind + len("Style"):][0:1])
-            model_name = "diff"
-            model_name = "sfn_" + model_name + "_" + pad_type + "_" + str(sery)
-            print("=> Record model file %s - %s" % (load_path, model_name))
-            load_paths.append(load_path)
-            model_names.append(model_name)
-            flags.append(dict(pad_type=pad_type))
-    
-    transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.mul(255))])
-    ds = ImageFolder(args.input_dir, transform=transform)
-    dl = DataLoader(ds, batch_size=1)
-
-    for n,m,flag in zip(model_names, load_paths, flags):
-        args.model_name = n
-        if args.compute:
-            net = transformer_net.TransformerNet(**flag)
-            net.load_state_dict(torch.load(m))
-            net = net.eval().cuda()
-            print(net)
-            utils.process_dataloader(args, net, dl)
-            del net
-        utils.generate_video(args, dl)
-
-
-def stylize(args):
-  if ',' in args.pad_type:
-    stylize_multiple(args)
-    return
-
-  transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.ToTensor(),
-        transforms.Lambda(lambda x: x.mul(255))])
-  try:
-    ds = ImageFolder(args.input_dir, transform=transform)
-  except:
-    ds = dataset.CustomImageDataset(args.input_dir, img_size=None, transform=transform, shuffle=False)
-  dl = DataLoader(ds, batch_size=1)
-  models = glob.glob(args.model_dir + "/epoch*.model")
-  models.sort()
-  model_path = models[-1]
-  print("=> Load from model file %s" % model_path)
-  if args.model_type == "rnn":
-    net = transformer_net.TransformerRNN(args.pad_type)
-    net.conv1 = transformer_net.ConvLayer(6, 32, 9, 1, pad_type=args.pad_type)
-  else:
-    net = transformer_net.TransformerNet(args.pad_type)
-  net.load_state_dict(torch.load(model_path))
-  net = net.eval().cuda()
-  print(net)
-  
-  if args.compute:
-    utils.process_dataloader(args, net, dl)
-  utils.generate_video(args, dl)
 
 
 def main():

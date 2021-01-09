@@ -2,4 +2,5 @@ server.sh
 pretrained
 data
 exprs
+download
 __pycache__

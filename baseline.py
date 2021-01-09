@@ -147,73 +147,21 @@ def check_paths(args):
 
 
 def stylize(args):
-    if ',' in args.pad_type:
-        stylize_multiple(args)
-        return
-
     transform = transforms.Compose([
         transforms.Resize(256),
         transforms.ToTensor(),
         transforms.Lambda(lambda x: x.mul(255))])
     ds = ImageFolder(args.input_dir, transform=transform)
     dl = DataLoader(ds, batch_size=1)
-    models = glob.glob(args.model_dir + "/epoch*.model")
-    models.sort()
-    model_path = models[-1]
-    print("=> Load from model file %s" % model_path)
+    print("=> Load from model file %s" % args.model_path)
     net = TransformerNet(args.pad_type)
-    net.load_state_dict(torch.load(model_path))
+    net.load_state_dict(torch.load(args.model_path))
     net = net.eval().cuda()
     print(net)
     
     utils.process_dataloader(args, net, dl)
     utils.generate_video(args, dl)
 
-
-def stylize_multiple(args):
-    pad_types = args.pad_type.split(",")
-    load_paths = []
-    model_names = []
-    flags = []
-    for pad_type in pad_types:
-        if len(pad_type) < 3: continue
-        expr_dirs = os.listdir(os.path.join(args.model_dir, pad_type))
-        expr_dirs.sort()
-        for expr_dir in expr_dirs:
-            models = glob.glob(os.path.join(args.model_dir, pad_type, expr_dir, "epoch*.model"))
-            models.sort()
-            try:
-                load_path = models[-1]
-            except IndexError:
-                continue
-            ind = load_path.find("NetStyle")
-            if ind > 0:
-                sery = int(load_path[ind + len("NetStyle"):ind + len("NetStyle") + 1])
-                model_name = "none"
-            else:
-                continue
-            model_name = "sfn_" + model_name + "_" + pad_type + "_" + str(sery)
-            print("=> Record model file %s - %s" % (load_path, model_name))
-            load_paths.append(load_path)
-            model_names.append(model_name)
-            flags.append(dict(pad_type=pad_type))
-    
-    transform = transforms.Compose([transforms.ToTensor(),
-                                    transforms.Lambda(lambda x: x.mul(255))])
-    ds = ImageFolder(args.input_dir, transform=transform)
-    dl = DataLoader(ds, batch_size=1)
-
-    for n,m,flag in zip(model_names, load_paths, flags):
-        args.model_name = n
-        if args.compute:
-            net = TransformerNet(**flag)
-            net.load_state_dict(torch.load(m))
-            net = net.eval().cuda()
-            print(net)
-            utils.process_dataloader(args, net, dl)
-            del net
-        utils.generate_video(args, dl)
-        
         
 def main():
     main_arg_parser = argparse.ArgumentParser(description="parser for training the stylization networks.")
@@ -278,17 +226,17 @@ def main():
         help="interpolate-detach (default) | reflect-start | none | reflect | replicate | zero")
     # paths
     eval_arg_parser.add_argument("--input-dir",
-        type=str, default="data/test",
+        type=str, default="data/testin",
         help="Standard dataset: video_name1/*.jpg video_name2/*.jpg")
     eval_arg_parser.add_argument("--output-dir",
-        type=str, default="/home/xujianjing/testdataout",
+        type=str, default="data/testout",
         help="The output directory of generated images.")
-    eval_arg_parser.add_argument("--model-dir",
-        type=str, default="exprs/DiffStyle1/",
+    eval_arg_parser.add_argument("--model-path",
+        type=str, default="",
         help="The path to saved model dir.")
     # others
     eval_arg_parser.add_argument("--model-name",
-        type=str, default="sfn_none_starrynight",
+        type=str, default="",
         help="The model name (used in naming output videos).")
     eval_arg_parser.add_argument("--compute",
         type=int, default=1,

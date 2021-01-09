@@ -78,10 +78,8 @@ def train_fdb(args):
   transformer.train()
   optimizer = torch.optim.Adam(transformer.parameters(), args.lr)
   mse_loss = torch.nn.MSELoss()
-  l1_loss = torch.nn.SmoothL1Loss()
 
   vgg = Vgg16()
-  utils.init_vgg16(args.vgg_model_dir)
   vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, "vgg16.weight")))
   vgg.eval()
 
@@ -89,7 +87,6 @@ def train_fdb(args):
     transformer.cuda()
     vgg.cuda()
     mse_loss.cuda()
-    l1_loss.cuda()
 
   style = utils.tensor_load_resize(args.style_image, args.style_size)
   style = style.unsqueeze(0)
@@ -126,7 +123,7 @@ def train_fdb(args):
     begin_time = time.time()
     pixel_fdb_loss = mse_loss(y[1:] - y[:-1], xc[1:] - xc[:-1])
     # temporal content: 16th
-    feature_fdb_loss = l1_loss(
+    feature_fdb_loss = mse_loss(
       features_y[2][1:] - features_y[2][:-1],
       features_xc[2][1:] - features_xc[2][:-1])
     pixel_fdb_loss.backward()
@@ -143,10 +140,8 @@ def train_ofb(args):
   transformer.train()
   optimizer = torch.optim.Adam(transformer.parameters(), args.lr)
   mse_loss = torch.nn.MSELoss()
-  l1_loss = torch.nn.SmoothL1Loss()
 
   vgg = Vgg16()
-  utils.init_vgg16(args.vgg_model_dir)
   vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, "vgg16.weight")))
   vgg.eval()
 
@@ -154,7 +149,6 @@ def train_ofb(args):
     transformer.cuda()
   vgg.cuda()
   mse_loss.cuda()
-  l1_loss.cuda()
 
   style = utils.tensor_load_resize(args.style_image, args.style_size)
   style = style.unsqueeze(0)

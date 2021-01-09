@@ -1,3 +1,6 @@
+"""
+Utilization script.
+"""
 import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
@@ -9,22 +12,6 @@ from PIL import Image
 from torch.autograd import Variable
 from vgg16 import Vgg16
 
-def plot_dic(dic, file):
-    for k, v in dic.items():
-        plt.plot(v)
-    plt.legend(list(dic.keys()))
-    plt.savefig(file)
-    plt.close()
-    
-def walklevel(some_dir, level=1):
-    some_dir = some_dir.rstrip(os.path.sep)
-    assert os.path.isdir(some_dir)
-    num_sep = some_dir.count(os.path.sep)
-    for root, dirs, files in os.walk(some_dir):
-        yield root, dirs, files
-        num_sep_this = root.count(os.path.sep)
-        if num_sep + level <= num_sep_this:
-            del dirs[:]
 
 def read_flow_file(path):
     """
@@ -38,10 +25,12 @@ def read_flow_file(path):
         raw = raw[3:].reshape(H, W, 2)
     return raw
 
+
 def read_image_file(path):
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
     with open(path, 'rb') as f:
         return np.array(Image.open(f))
+
 
 def save_image(name, nparr):
     if nparr.shape[-1] == 1:
@@ -49,6 +38,7 @@ def save_image(name, nparr):
     # save uint8 arr as image
     with open(name, 'wb') as f:
         return Image.fromarray(nparr).save(f, format="PNG")
+
 
 def tensor_save_image(filename, tensor):
     if tensor.max() < 2:
@@ -69,6 +59,7 @@ def tensor_save_image(filename, tensor):
 
     save_image(filename, nparr.astype("uint8"))
 
+
 def tensor_load_resize(filename, size=0):
     img = Image.open(filename)
     w, h = img.size
@@ -84,6 +75,7 @@ def tensor_load_resize(filename, size=0):
     img = torch.from_numpy(img).float()
     return img
 
+
 def tensor_load_rgbimage(filename, size=None, scale=None):
     img = Image.open(filename)
     if size is not None:
@@ -94,14 +86,6 @@ def tensor_load_rgbimage(filename, size=None, scale=None):
     img = torch.from_numpy(img).float()
     return img
 
-def  tensor_save_01img(tensor,filename,cuda=False):
-    if cuda:
-        img=(128*tensor.clone()).cpu().clamp(-127,128).numpy()
-    else:
-        img=(128*tensor.clone()).clamp(-127,128).numpy()
-    img=img.astype('int8')
-    img=Image.fromarray(img,'L')
-    img.save(filename)
 
 def tensor_save_rgbimage(tensor, filename, cuda=False):
     if cuda:
@@ -140,20 +124,6 @@ def preprocess_batch(batch):
     batch = batch.transpose(0, 1)
     return batch
 
-#load_lua no longer compatible
-def init_vgg16(model_folder):
-    pass
-    """
-    if not os.path.exists(os.path.join(model_folder, 'vgg16.weight')):
-        if not os.path.exists(os.path.join(model_folder, 'vgg16.t7')):
-            os.system(
-                'wget https://www.dropbox.com/s/76l3rt4kyi3s8x7/vgg16.t7?dl=1 -O ' + os.path.join(model_folder, 'vgg16.t7'))
-        vgglua = load_lua(os.path.join(model_folder, 'vgg16.t7'))
-        vgg = Vgg16()
-        for (src, dst) in zip(vgglua.parameters()[0], vgg.parameters()):
-            dst.data[:] = src
-        torch.save(vgg.state_dict(), os.path.join(model_folder, 'vgg16.weight'))
-    """
 
 def process_dataloader(args, net, dl):
   prev_dir_name = ""
@@ -189,13 +159,11 @@ def process_dataloader(args, net, dl):
       prev_dir_name = out_path[:ind]
     if x.size(2) % 4 != 0 or x.size(3) % 4 != 0:
       y = F.pad(x, (-w1, -w2, -h1, -h2), 'reflect')
-    #print(x.shape, x.min(), x.max())
     tensor_save_bgrimage(y.data[0], out_path, True)
-    #tensor_save_bgrimage(x.data[0], out_path.replace(".jpg", "_t.jpg"), True)
+
 
 def generate_video(args, dl):
   prev_dir_name = ""
-  # generate video
   for idx, (x, _) in enumerate(dl):
     try:
       img_path = dl.dataset.samples[idx][0]
@@ -221,10 +189,7 @@ def generate_video(args, dl):
       print(cmd)
       os.system(cmd)
       video_name = img_path.split("/")[-2]
-      target_video_path = os.path.join("/home/xujianjing/FDBVideoStable/download/", video_name + "_" + args.model_name + ".mp4")
+      target_video_path = os.path.join("download/", video_name + "_" + args.model_name + ".mp4")
       cmd = "cp %s %s" % (output_video_path, target_video_path)
       print(cmd)
       os.system(cmd)
-
-
-# ffmpeg -y -f image2 -i "long_video/IMG_3108/IMG_3108_00%[7-8%]%*.png" -vcodec libx264 -pix_fmt yuv420p -b:v 16000k -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" occlusion_orig.mp4 ; ffmpeg -y -f image2 -i "long_video_out/IMG_3108/sfn_none_lamuse/IMG_3108_00%[7-8%]%*.png" -vcodec libx264 -pix_fmt yuv420p -b:v 16000k -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" occlusion_sfn_none_lamuse.mp4 ; ffmpeg -y -f image2 -i "long_video_out/IMG_3108/sfn_diff_lamuse/IMG_3108_00%[7-8%]%*.png" -vcodec libx264 -pix_fmt yuv420p -b:v 16000k -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" occlusion_sfn_diff_lamuse.mp4
