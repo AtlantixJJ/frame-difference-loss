@@ -49,7 +49,6 @@ def train(args):
         transformer.conv1 = transformer_net.ConvLayer(6, 32, kernel_size=9, stride=1, pad_type=args.pad_type)
     optimizer = torch.optim.Adam(transformer.parameters(), args.lr)
     mse_loss = torch.nn.MSELoss()
-    l1_loss = torch.nn.SmoothL1Loss()
 
     vgg = Vgg16()
     vgg.load_state_dict(torch.load(os.path.join(args.vgg_model)))
@@ -58,7 +57,6 @@ def train(args):
     transformer.cuda()
     vgg.cuda()
     mse_loss.cuda()
-    l1_loss.cuda()
 
     style = utils.tensor_load_resize(args.style_image, args.style_size)
     style = style.unsqueeze(0)

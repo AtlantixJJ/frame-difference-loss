@@ -10,11 +10,22 @@ data/DAVIS/train/JPEGImages/480p
 data/mscoco/train2014
 ```
 
-2. 
+2. Folder organization is the following:
+
+```
+data
+`- DAVIS
+`- mscoco
+`- styles
+`- testin
+`- testout
+download
+exprs
+pretrained
+`- vgg16.weight
+```
 
 TODO
 1. vgg download method
-2. mscoco download method
-3. davis dataset download method
 4. give credit to fast-neural-style
 5. give credit to deepflow

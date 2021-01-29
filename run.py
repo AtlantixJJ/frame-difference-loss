@@ -32,9 +32,9 @@ def get_train_command(model, loss, style, init_model, pad_type, find_init=False)
     script_name = "baseline.py"
     style_name = style[style.rfind("/") + 1 : -4]
     model_name = f"{model}_{loss}_{style_name}_{pad_type}"
-    model_dir = f"{expr_dir}/{model_name}"
+    model_dir = f"exprs/{model_name}"
     if find_init:
-        init_model = find_model_from_dir(model, style)
+        init_model = find_model_from_dir(model, style_name)
     if loss == "ofb":
         script_name = "ofb.py"
     elif loss in ["p-fdb", "c-fdb"]:
@@ -87,7 +87,6 @@ def train(args):
             model=args.model,
             loss=args.temp_loss,
             style=args.style,
-            expr_dir=args.expr_dir,
             init_model=args.model_path,
             pad_type=args.pad_type,
             find_init=False)]
@@ -99,7 +98,6 @@ def train(args):
             model=args.model,
             loss=args.temp_loss,
             style=style,
-            expr_dir=args.expr_dir,
             init_model=args.model_path,
             pad_type=args.pad_type,
             find_init=args.temp_loss != "none"))
