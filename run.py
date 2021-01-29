@@ -1,5 +1,5 @@
 """
-Helper for reproducing experiments in the paper.
+Helper for reproducing experiments in the paper. When specified with multiple GPUs, multiple tasks can be executed together.
 Usage: python run.py <train/eval> <other arguments>
 """
 import argparse, sys, os, time, glob
