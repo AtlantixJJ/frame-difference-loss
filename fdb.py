@@ -175,7 +175,7 @@ def main():
         type=float, default=10.0,
         help="pixel FDB weight")
     train_arg_parser.add_argument("--time-strength2",
-        type=float, default=10.0,
+        type=float, default=100.0,
         help="feature FDB weight")
     train_arg_parser.add_argument("--content-weight",
         type=float, default=1.0,

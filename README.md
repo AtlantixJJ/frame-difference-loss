@@ -10,7 +10,7 @@ data/DAVIS/train/JPEGImages/480p
 data/mscoco/train2014
 ```
 
-2. Folder organization is the following:
+2. Folder organization is as the following:
 
 ```
 data
@@ -25,7 +25,16 @@ pretrained
 `- vgg16.weight
 ```
 
+3. Install DeepFlow and estimate optic flow following the instructions from ![https://github.com/manuelruder/artistic-videos](https://github.com/manuelruder/artistic-videos)
+
+
+## 
+
 TODO
 1. vgg download method
 4. give credit to fast-neural-style
 5. give credit to deepflow
+
+## Acknowledgement
+
+Part of this project is based on a pytorch implementation of fast neural style: ![https://github.com/abhiskk/fast-neural-style](https://github.com/abhiskk/fast-neural-style).

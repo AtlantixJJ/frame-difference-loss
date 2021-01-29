@@ -79,7 +79,7 @@ def evaluate(args):
             pad_type=args.pad_type,
             find_init=args.temp_loss != "none"))
     run_commands(args.gpus, cmds)
-    
+
 
 def train(args):
     if args.style != "ALL":
