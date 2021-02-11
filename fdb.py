@@ -49,6 +49,7 @@ def train(args):
         transformer.conv1 = transformer_net.ConvLayer(6, 32, kernel_size=9, stride=1, pad_type=args.pad_type)
     optimizer = torch.optim.Adam(transformer.parameters(), args.lr)
     mse_loss = torch.nn.MSELoss()
+    l1_loss = torch.nn.L1Loss()
 
     vgg = Vgg16()
     vgg.load_state_dict(torch.load(os.path.join(args.vgg_model)))
@@ -120,7 +121,7 @@ def train(args):
             # FDB
             pixel_fdb_loss = args.time_strength1 * mse_loss(y[1:] - y[:-1], xc[1:] - xc[:-1])
             # temporal content: 16th
-            feature_fdb_loss = args.time_strength2 * mse_loss(
+            feature_fdb_loss = args.time_strength2 * l1_loss(
                 features_y[2][1:] - features_y[2][:-1],
                 features_xc[2][1:] - features_xc[2][:-1])
 
@@ -175,7 +176,7 @@ def main():
         type=float, default=10.0,
         help="pixel FDB weight")
     train_arg_parser.add_argument("--time-strength2",
-        type=float, default=100.0,
+        type=float, default=400.0,
         help="feature FDB weight")
     train_arg_parser.add_argument("--content-weight",
         type=float, default=1.0,

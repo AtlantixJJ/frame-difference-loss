@@ -5,8 +5,8 @@ Usage: python run.py <train/eval> <other arguments>
 import argparse, sys, os, time, glob
 
 
-def find_model_from_dir(model, style_name):
-    init_dir = f"{model}_none_{style_name}_interpolate-detach"
+def find_model_from_dir(model, loss_type, style_name):
+    init_dir = f"{model}_{loss_type}_{style_name}_interpolate-detach"
     init_model = glob.glob(f"exprs/{init_dir}/*.model")
     if len(init_model) != 1:
         print(f"!> Fail to find initialization needed for {model} {style_name} from exprs/{init_dir}")
@@ -34,7 +34,7 @@ def get_train_command(model, loss, style, init_model, pad_type, find_init=False)
     model_name = f"{model}_{loss}_{style_name}_{pad_type}"
     model_dir = f"exprs/{model_name}"
     if find_init:
-        init_model = find_model_from_dir(model, style_name)
+        init_model = find_model_from_dir(model, "none", style_name)
     if loss == "ofb":
         script_name = "ofb.py"
     elif loss in ["p-fdb", "c-fdb"]:
@@ -54,7 +54,7 @@ def get_eval_command(model, loss, style, init_model, pad_type, find_init=True):
     model_name = f"{model}_{loss}_{style_name}_{pad_type}"
     model_dir = f"exprs/{model_name}"
     if find_init:
-        init_model = find_model_from_dir(model, style_name)
+        init_model = find_model_from_dir(model, loss, style_name)
     return f"python -u baseline.py eval --model-path {init_model} --model-type {model} --model-name {model_name} --pad-type {pad_type}"
 
 
@@ -77,7 +77,7 @@ def evaluate(args):
             style=style,
             init_model=args.model_path,
             pad_type=args.pad_type,
-            find_init=args.temp_loss != "none"))
+            find_init=True))
     run_commands(args.gpus, cmds)
 
 

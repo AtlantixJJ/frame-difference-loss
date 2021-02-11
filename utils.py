@@ -150,7 +150,7 @@ def process_dataloader(args, net, dl):
       out_name = dl.dataset.filelist[idx]
     out_base = out_base.replace(args.input_dir, args.output_dir)
     out_path = os.path.join(out_base, args.model_name, out_name)
-    print("=> Write output image to %s" % out_path)
+    #print("=> Write output image to %s" % out_path)
     ind = out_path.rfind("/")
     # in case the directory has not been built
     if prev_dir_name != out_path[:ind]:

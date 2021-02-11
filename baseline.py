@@ -42,7 +42,7 @@ def train(args):
     transformer = transformer.train()
     optimizer = torch.optim.Adam(transformer.parameters(), args.lr)
     mse_loss = torch.nn.MSELoss()
-    print(transformer)
+    #print(transformer)
     vgg = Vgg16()
     vgg.load_state_dict(torch.load(os.path.join(args.vgg_model_dir, "vgg16.weight")))
     vgg.eval()
@@ -157,7 +157,6 @@ def stylize(args):
     net = TransformerNet(args.pad_type)
     net.load_state_dict(torch.load(args.model_path))
     net = net.eval().cuda()
-    print(net)
     
     utils.process_dataloader(args, net, dl)
     utils.generate_video(args, dl)
