@@ -230,32 +230,6 @@ def main():
         type=float, default=1e-4,
         help="learning rate, default is 0.001")
 
-    eval_arg_parser = subparsers.add_parser("eval", help="parser for evaluation/stylizing arguments")
-    # model config
-    eval_arg_parser.add_argument("--model-type",
-        type=str, default="sfn",
-        help="sfn | rnn")
-    eval_arg_parser.add_argument("--pad-type",
-        type=str, default="interpolate-detach",
-        help="interpolate-detach (default) | reflect-start | none | reflect | replicate | zero")
-    # paths
-    eval_arg_parser.add_argument("--input-dir",
-        type=str, default="data/test",
-        help="Standard dataset: video_name1/*.jpg video_name2/*.jpg")
-    eval_arg_parser.add_argument("--output-dir",
-        type=str, default="/home/xujianjing/testdataout",
-        help="The output directory of generated images.")
-    eval_arg_parser.add_argument("--model-dir",
-        type=str, default="exprs/CombStyle1/",
-        help="The path to saved model dir.")
-    # others
-    eval_arg_parser.add_argument("--model-name",
-        type=str, default="sfn_comb_starrynight",
-        help="The model name (used in naming output videos).")
-    eval_arg_parser.add_argument("--compute",
-        type=int, default=1,
-        help="Whether to generate new images or use existing ones.")
-
     args = main_arg_parser.parse_args()
 
     if args.subcommand is None:
@@ -265,8 +239,6 @@ def main():
     if args.subcommand == "train":
         check_paths(args)
         train(args)
-    else:
-        stylize(args)
 
 if __name__ == "__main__":
     main()
