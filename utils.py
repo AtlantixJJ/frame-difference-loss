@@ -117,12 +117,14 @@ def subtract_imagenet_mean_batch(batch):
   return batch - mean
 
 
-def preprocess_batch(batch):
-  batch = batch.transpose(0, 1)
-  (r, g, b) = torch.chunk(batch, 3)
-  batch = torch.cat((b, g, r))
-  batch = batch.transpose(0, 1)
-  return batch
+def preprocess_batch(x):
+  N, C, H, W = x.shape
+  nH, nW = H // 4 * 4, W // 4 * 4
+  dH, dW = (H - nH) // 2, (W - nW) // 2
+  r, g, b = torch.split(x, 1, 1)
+  x = torch.cat([b, g, r], 1)
+  x = x[:, :, dH : dH + nH, dW : dW + nW]
+  return x
 
 
 def process_dataloader(args, net, dl):

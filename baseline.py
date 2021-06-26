@@ -85,20 +85,18 @@ def train(args):
           os.path.join(args.save_model_dir, "in_%d.png" % idx),
           True)
 
-      xc = x.detach()
-
       y = utils.subtract_imagenet_mean_batch(y)
-      xc = utils.subtract_imagenet_mean_batch(xc)
+      x = utils.subtract_imagenet_mean_batch(x)
 
       features_y = vgg(y)
-      features_xc = vgg(center_crop(xc, y.size(2), y.size(3)))
+      features_x = vgg(center_crop(x, y.size(2), y.size(3)))
       
       #content target
-      f_xc_c = features_xc[2].detach()
+      f_x = features_x[2].detach()
       # content
-      f_c = features_y[2]
+      f_y = features_y[2]
 
-      content_loss = args.content_weight * mse_loss(f_c, f_xc_c)
+      content_loss = args.content_weight * mse_loss(f_y, f_x)
 
       style_loss = 0.
       for m in range(len(features_y)):
