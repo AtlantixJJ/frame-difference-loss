@@ -156,7 +156,8 @@ def stylize(args):
   net.load_state_dict(torch.load(args.model_path))
   net = net.eval().cuda()
   
-  utils.process_dataloader(args, net, dl)
+  if args.compute == 1:
+    utils.process_dataloader(args, net, dl)
   utils.generate_video(args, dl)
 
 

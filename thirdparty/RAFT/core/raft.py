@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, "thirdparty/RAFT/core")
 import numpy as np
 import torch
 import torch.nn as nn

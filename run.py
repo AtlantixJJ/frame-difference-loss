@@ -49,13 +49,12 @@ def get_train_command(model, loss, style, init_model, pad_type, find_init=False)
     return s
 
 
-def get_eval_command(model, loss, style, init_model, pad_type, find_init=True):
+def get_eval_command(model, loss, style, init_model, pad_type, compute=1, find_init=True):
     style_name = style[style.rfind("/") + 1 : -4]
     model_name = f"{model}_{loss}_{style_name}_{pad_type}"
-    model_dir = f"exprs/{model_name}"
     if find_init:
         init_model = find_model_from_dir(model, loss, style_name)
-    return f"python -u baseline.py eval --model-path {init_model} --model-type {model} --model-name {model_name} --pad-type {pad_type}"
+    return f"python -u baseline.py eval --model-path {init_model} --model-type {model} --model-name {model_name} --pad-type {pad_type} --compute {compute}"
 
 
 def evaluate(args):
@@ -66,6 +65,7 @@ def evaluate(args):
             style=args.style,
             init_model=args.model_path,
             pad_type=args.pad_type,
+            compute=args.compute,
             find_init=False)]
     cmds = []
     styles = glob.glob("data/styles/*")
@@ -77,6 +77,7 @@ def evaluate(args):
             style=style,
             init_model=args.model_path,
             pad_type=args.pad_type,
+            compute=args.compute,
             find_init=True))
     run_commands(args.gpus, cmds)
 
@@ -156,7 +157,10 @@ def main():
     eval_parser.add_argument("--model-path",
         default="",
         help="If the argument ``style'' is set to ``ALL'', this is ignored and models are automatically found in expr directory. Otherwise, it specifies the model path.")
-
+    eval_parser.add_argument("--compute",
+        default=1,
+        help="Whether to re-compute all the frames.",
+        type=int)
     args = main_parser.parse_args()
     if args.subcommand == "train":
         train(args)

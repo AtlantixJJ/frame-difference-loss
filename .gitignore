@@ -1,4 +1,9 @@
 server.sh
 exprs
+*.zip
 download
+data/MPI-Sintel-complete/
+data/DAVIS
+data/testout
+data/testin
 __pycache__

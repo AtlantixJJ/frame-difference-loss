@@ -1,5 +1,6 @@
 import sys
 sys.path.append('core')
+sys.path.append('thirdparty/RAFT/core')
 
 from PIL import Image
 import argparse
@@ -9,6 +10,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 import datasets
 from utils import flow_viz
@@ -128,6 +130,42 @@ def validate_sintel(model, iters=32):
 
 
 @torch.no_grad()
+def evaluate_davis(model, iters=32):
+    """ Peform validation using the Sintel (train) split """
+    model.eval()
+    val_dataset = datasets.DAVISDataset(split='train')
+
+    for val_id in tqdm(range(len(val_dataset))):
+        image1, image2, image_paths = val_dataset[val_id]
+        image1 = image1[None].cuda()
+        image2 = image2[None].cuda()
+
+        padder = InputPadder(image1.shape)
+        image1, image2 = padder.pad(image1, image2)
+
+        flow_low, flow_pr = model(image1, image2, iters=iters, test_mode=True)
+        
+        flow = padder.unpad(flow_pr[0]).permute(1, 2, 0).cpu().numpy()
+
+        # find out result storing paths
+        fpath = image_paths[0]
+        ind = fpath.rfind("/")
+        name = fpath[ind + 1:fpath.rfind(".")]
+        folder_path = fpath[:ind]
+        flow_folder = folder_path.replace("JPEGImages", "Flows")
+        flowviz_folder = folder_path.replace("JPEGImages", "FlowVizs")
+        flow_path = os.path.join(flow_folder, f"{name}.flo")
+        flowviz_path = os.path.join(flowviz_folder, f"{name}.png")
+        if not os.path.exists(flow_folder):
+            os.makedirs(flow_folder)
+        if not os.path.exists(flowviz_folder):
+            os.makedirs(flowviz_folder)
+
+        frame_utils.writeFlow(flow_path, flow)
+        Image.fromarray(flow_viz.flow_to_image(flow)).save(open(flowviz_path, "wb"), format="PNG")
+
+
+@torch.no_grad()
 def validate_kitti(model, iters=24):
     """ Peform validation using the KITTI-2015 (train) split """
     model.eval()
@@ -193,5 +231,8 @@ if __name__ == '__main__':
 
         elif args.dataset == 'kitti':
             validate_kitti(model.module)
+        
+        elif args.dataset == 'davis':
+            evaluate_davis(model.module)
 
 

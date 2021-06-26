@@ -99,6 +99,39 @@ class FlowDataset(data.Dataset):
         return len(self.image_list)
         
 
+class DAVISDataset(FlowDataset):
+    """
+    data_dir: dir/subitem/*.jpg, dir/subitem/flow_/forward_%d_%d.flo
+    batch size must be 1
+    """
+
+    def __init__(self, data_dir="data/DAVIS", split="train", no_flow=True):
+        """
+        Args:
+            split: train, val, test.
+            seq_size: The sequence length of batch
+            interval: The frame interval
+        """
+        super().__init__()
+        self.data_dir = data_dir
+        self.split = split
+        self.is_test = no_flow
+        vnames = open(osp.join(self.data_dir, "ImageSets", "2017",
+            f"{split}.txt")).read().split("\n")[:-1]
+        image_dir = osp.join(self.data_dir, "JPEGImages", "480p")
+        for vname in vnames:
+            images = os.listdir(osp.join(image_dir, vname))
+            images.sort()
+            fpaths = [osp.join(image_dir, vname, i) for i in images]
+            for prev, cur in zip(fpaths[:-1], fpaths[1:]):
+                self.image_list += [[prev, cur]]
+                self.extra_info += [[prev, cur]]
+        
+    def __len__(self):
+        """The number of frame parts"""
+        return len(self.image_list)
+
+
 class MpiSintel(FlowDataset):
     def __init__(self, aug_params=None, split='training', root='datasets/Sintel', dstype='clean'):
         super(MpiSintel, self).__init__(aug_params)

@@ -50,16 +50,14 @@ class DAVISDataset(Dataset):
     batch size must be 1
     """
 
-    def __init__(self, data_dir,
-        seq_size=4, interval=1, img_size=(400, 400), use_flow=False):
+    def __init__(self, data_dir, split="train",
+        seq_size=2, interval=1, img_size=(400, 400), use_flow=False):
         """
         Args:
+            split: train, val, test.
             seq_size: The sequence length of batch
             interval: The frame interval
         """
-        self.builtin_transform = transforms.Compose([
-                                    transforms.ToTensor(),
-                                    transforms.Lambda(lambda x: x.mul(255))])
         self.use_flow = use_flow
         self.data_dir = data_dir
         self.img_size = img_size
