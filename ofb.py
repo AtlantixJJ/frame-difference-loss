@@ -16,56 +16,44 @@ from vgg16 import Vgg16
 from flow_vis import flow_to_color
 
 
-def center_crop(x, h, w):
-    # Assume x is (N, C, H, W)
-    H, W = x.size()[2:]
-    if h == H and w == W: return x
-    assert(h <= H and w <= W)
-    dh, dw = H - h, W - w
-    ddh, ddw = dh // 2, dw // 2
-    return x[:, :, ddh:-(dh-ddh), ddw:-(dw-ddw)]
-
-
 def weighted_mse(x, y, conf):
-    diff = (x - y) * conf
-    diff = diff * diff
-    return diff.sum() / conf.sum()
+  diff = (x - y) * conf
+  diff = diff * diff
+  return diff.sum() / conf.sum()
 
 
 def warp(x, flo):
-    """
-    warp an image/tensor (im2) back to im1, according to the optical flow
-    x: [B, C, H, W] (im2)
-    flo: [B, 2, H, W] flow
-    """
-    B, C, H, W = x.size()
-    # mesh grid 
-    xx = torch.arange(0, W).view(1,-1).repeat(H,1)
-    yy = torch.arange(0, H).view(-1,1).repeat(1,W)
-    xx = xx.view(1,1,H,W).repeat(B,1,1,1)
-    yy = yy.view(1,1,H,W).repeat(B,1,1,1)
-    grid = torch.cat((xx,yy),1).float()
+  """
+  warp an image/tensor (im2) back to im1, according to the optical flow
+  x: [B, C, H, W] (im2)
+  flo: [B, 2, H, W] flow
+  """
+  B, C, H, W = x.size()
+  # mesh grid 
+  xx = torch.arange(0, W).view(1,-1).repeat(H,1)
+  yy = torch.arange(0, H).view(-1,1).repeat(1,W)
+  xx = xx.view(1,1,H,W).repeat(B,1,1,1)
+  yy = yy.view(1,1,H,W).repeat(B,1,1,1)
+  grid = torch.cat((xx,yy),1).float()
 
-    if x.is_cuda: grid = grid.cuda()
-    vgrid = grid + flo
+  if x.is_cuda:
+    grid = grid.cuda()
+  vgrid = grid + flo
 
-    # scale grid to [-1,1] 
-    vgrid[:,0,:,:] = 2.0*vgrid[:,0,:,:].clone() / max(W-1,1)-1.0
-    vgrid[:,1,:,:] = 2.0*vgrid[:,1,:,:].clone() / max(H-1,1)-1.0
+  # scale grid to [-1,1] 
+  vgrid[:,0,:,:] = 2.0*vgrid[:,0,:,:].clone() / max(W-1,1)-1.0
+  vgrid[:,1,:,:] = 2.0*vgrid[:,1,:,:].clone() / max(H-1,1)-1.0
 
-    vgrid = vgrid.permute(0,2,3,1)        
-    output = F.grid_sample(x, vgrid)
-    mask = torch.ones(x.size()).cuda()
-    mask = F.grid_sample(mask, vgrid)
+  vgrid = vgrid.permute(0,2,3,1)    
+  output = F.grid_sample(x, vgrid)
+  EPS = 1e-3
+  still_area = (F.grid_sample(grid, vgrid) - grid).abs() < EPS
+  nomotion_area = (flo[:, 0].abs() < EPS) & (flo[:, 1].abs() < EPS)
+  nonstill_area = ~(still_area[:, 0] & still_area[:, 1])
+  print(nonstill_area.sum(), nomotion_area.sum(), nomotion_area.view(-1).size())
+  mask = (nonstill_area | nomotion_area).float()
 
-    # if W==128:
-        # np.save('mask.npy', mask.cpu().data.numpy())
-        # np.save('warp.npy', output.cpu().data.numpy())
-    
-    mask[mask<0.9999] = 0
-    mask[mask>0] = 1
-    
-    return output, mask
+  return output, mask
 
 
 def train(args):
@@ -85,9 +73,10 @@ def train(args):
     transformer = transformer_net.TransformerNet(args.pad_type)
     seq_size = 2
 
-  train_dataset = dataset.DAVISDataset(args.dataset,
-    seq_size=seq_size, use_flow=args.flow)
-  train_loader = DataLoader(train_dataset, batch_size=1, **kwargs)
+  train_dataset = dataset.DAVISDataset(args.dataset, "train",
+    seq_size=seq_size, no_flow=False)
+  train_loader = DataLoader(train_dataset,
+    shuffle=True, batch_size=1, **kwargs)
 
   if args.model_type == "rnn":
     transformer = transformer_net.TransformerRNN(args.pad_type)
@@ -104,7 +93,8 @@ def train(args):
   l1_loss = torch.nn.SmoothL1Loss()
 
   vgg = Vgg16()
-  vgg.load_state_dict(torch.load(os.path.join(args.vgg_model, "vgg16.weight")))
+  vgg.load_state_dict(torch.load(os.path.join(
+    args.vgg_model_dir, "vgg16.weight")))
   vgg.eval()
 
   if args.cuda:
@@ -124,83 +114,75 @@ def train(args):
   style = utils.subtract_imagenet_mean_batch(style)
   features_style = vgg(style)
   gram_style = [utils.gram_matrix(y).detach() for y in features_style]
-
+  iters = 0
   for e in range(args.epochs):
-    train_loader.dataset.reset()
     transformer.train()
     transformer.cuda()
     agg_content_loss = agg_style_loss = agg_pixelofb_loss = 0.
-    iters = 0
-    anormaly = False
-    for batch_id, (x, flow, conf) in enumerate(train_loader):
-      x,flow,conf=x[0],flow[0],conf[0]
+    for batch_id, (x, flow, extra_info) in enumerate(train_loader):
+      x, flow = x[0], flow[0]
       iters += 1
 
       optimizer.zero_grad()
       x = utils.preprocess_batch(x) # (N, 3, 256, 256)
+      flow = utils.factor4_crop(flow)
       if args.cuda:
         x = x.cuda()
         flow = flow.cuda()
-        conf = conf.cuda()
       y = transformer(x) # (N, 3, 256, 256)
 
-      xc = center_crop(x.detach(), y.size(2), y.size(3))
-
       vgg_y = utils.subtract_imagenet_mean_batch(y)
-      vgg_x = utils.subtract_imagenet_mean_batch(xc)
+      vgg_x = utils.subtract_imagenet_mean_batch(x)
       
-      features_y = vgg(vgg_y)
-      features_xc = vgg(vgg_x)
+      f_y = vgg(vgg_y)
+      f_x = vgg(vgg_x)
       
       #content target
-      f_xc_c = features_xc[2].detach()
+      f_xc_c = f_x[2].detach()
       # content
-      f_c = features_y[2]
+      f_c = f_y[2]
 
-      #content_feature_target = center_crop(f_xc_c, f_c.size(2), f_c.size(3))
       content_loss = args.content_weight * mse_loss(f_c, f_xc_c)
 
       style_loss = 0.
-      for m in range(len(features_y)):
+      for m in range(len(f_y)):
         gram_s = gram_style[m]
-        gram_y = utils.gram_matrix(features_y[m])
+        gram_y = utils.gram_matrix(f_y[m])
         batch_style_loss = 0
         for n in range(gram_y.shape[0]):
           batch_style_loss += args.style_weight * mse_loss(gram_y[n], gram_s[0])
         style_loss += batch_style_loss / gram_y.shape[0]
           
-      warped_y, warped_y_mask = warp(y[1:], flow)
+      warped_y, mask = warp(y[1:], flow)
       warped_y = warped_y.detach()
-      warped_y_mask *= conf
       pixel_ofb_loss = args.time_strength * weighted_mse(
-        y[:-1], warped_y, warped_y_mask)
+        y[:-1], warped_y, mask)
 
       total_loss = content_loss + style_loss + pixel_ofb_loss
 
       total_loss.backward()
       optimizer.step()
 
-      if (batch_id + 1) % 100 == 0:
+      if (iters + 1) % 10 == 0:
         prefix = args.save_model_dir + "/"
-        idx = (batch_id + 1) // 100
-        flow_image = flow_to_color(
-          flow[0].detach().cpu().numpy().transpose(1,2,0))
-        utils.save_image(prefix + "forward_flow_%d.png" % idx, flow_image)
-        warped_x, warped_x_mask = warp(x[1:], flow)
-        warped_x = warped_x.detach()
-        warped_x_mask *= conf
+        idx = (iters + 1) // 10
         for i in range(2):
           utils.tensor_save_bgrimage(
             y.data[i], prefix + "out_%d-%d.png" % (idx, i), args.cuda)
           utils.tensor_save_bgrimage(
             x.data[i], prefix + "in_%d-%d.png" % (idx, i), args.cuda)
           if i < warped_y.shape[0]:
+            flow_image = flow_to_color(
+              flow[i].detach().cpu().numpy().transpose(1,2,0))
+            utils.save_image(prefix + "forward_flow_%d.png" % idx, flow_image)
+            warped_x, mask = warp(x[i+1:i+2], flow[i:i+1])
+            warped_y, mask = warp(y[i+1:i+2], flow[i:i+1])
             utils.tensor_save_bgrimage(
-              warped_y.data[i], prefix + "wout_%d-%d.png" % (idx, i), args.cuda)
+              warped_y.data[0], prefix + "wout_%d-%d.png" % (idx, i), args.cuda)
             utils.tensor_save_bgrimage(
-              warped_x.data[i], prefix + "win_%d-%d.png" % (idx, i), args.cuda)
+              warped_x.data[0], prefix + "win_%d-%d.png" % (idx, i), args.cuda)
             utils.tensor_save_image(
-              prefix + "conf_%d-%d.png" % (idx, i), warped_x_mask.data[i])
+              prefix + "conf_%d-%d.png" % (idx, i), mask.data[0])
             
       agg_content_loss += content_loss.data
       agg_style_loss += style_loss.data
@@ -215,7 +197,6 @@ def train(args):
         agg_total / iters)
       print(mesg)
       agg_content_loss = agg_style_loss = agg_pixelofb_loss = 0.0
-      iters = 0
 
     # save model
     transformer.eval()
@@ -242,11 +223,8 @@ def main():
 
     train_arg_parser = subparsers.add_parser("train",
                                              help="parser for training arguments")
-
-    train_arg_parser.add_argument("--flow", type=bool, default=True,
-                                  help="If to train use OFB loss")
-    train_arg_parser.add_argument("--time-strength", type=float, default=1000.0,
-                                  help="pixel OFB weight")
+    train_arg_parser.add_argument("--time-strength", type=float, default=400.0,
+                                  help="OFB loss weight.")
     train_arg_parser.add_argument("--init-model", type=str, default="",
                                   help="model dir")
     train_arg_parser.add_argument("--model-type", type=str, default="rnn", # rnn | sfn
@@ -255,17 +233,15 @@ def main():
                                   help="reflect-start|none")
     train_arg_parser.add_argument("--epochs", type=int, default=1,
                                   help="number of training epochs, default is 1")
-    train_arg_parser.add_argument("--batch-size", type=int, default=2,
-                                  help="batch size for training, default is 4: BPTT for 4 steps")
     train_arg_parser.add_argument("--dataset", type=str,
-                                  default="../data/DAVIS_VIDEO/train/JPEGImages/480p/",
+                                  default="data/DAVIS",
                                   help="path to training dataset, the path should point to a folder "
                                        "containing another folder with all the training images")
-    train_arg_parser.add_argument("--style-image", type=str, default="../data/styles/starry_night.jpg",
+    train_arg_parser.add_argument("--style-image", type=str, default="data/styles/starry_night.jpg",
                                   help="path to style-image")
-    train_arg_parser.add_argument("--vgg-model-dir", type=str, default="../pretrained/",
+    train_arg_parser.add_argument("--vgg-model-dir", type=str, default="pretrained",
                                   help="directory for vgg, if model is not present in the directory it is downloaded")
-    train_arg_parser.add_argument("--save-model-dir", type=str, default="../exprs/rnn/",
+    train_arg_parser.add_argument("--save-model-dir", type=str, default="exprs",
                                   help="path to folder where trained model will be saved.")
     train_arg_parser.add_argument("--image-size", type=int, default=400,
                                   help="size of training images, default is 256 X 256")

@@ -118,11 +118,15 @@ def subtract_imagenet_mean_batch(batch):
 
 
 def preprocess_batch(x):
+  r, g, b = torch.split(x, 1, 1)
+  x = torch.cat([b, g, r], 1)
+  return factor4_crop(x)
+
+
+def factor4_crop(x):
   N, C, H, W = x.shape
   nH, nW = H // 4 * 4, W // 4 * 4
   dH, dW = (H - nH) // 2, (W - nW) // 2
-  r, g, b = torch.split(x, 1, 1)
-  x = torch.cat([b, g, r], 1)
   x = x[:, :, dH : dH + nH, dW : dW + nW]
   return x
 

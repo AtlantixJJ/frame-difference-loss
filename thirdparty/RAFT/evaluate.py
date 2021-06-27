@@ -143,9 +143,12 @@ def evaluate_davis(model, iters=32):
         padder = InputPadder(image1.shape)
         image1, image2 = padder.pad(image1, image2)
 
-        flow_low, flow_pr = model(image1, image2, iters=iters, test_mode=True)
-        
-        flow = padder.unpad(flow_pr[0]).permute(1, 2, 0).cpu().numpy()
+        _, flow_pr = model(image1, image2,
+            iters=iters, test_mode=True)
+        forward_flow = padder.unpad(flow_pr[0]).permute(1, 2, 0).cpu().numpy()
+        _, flow_pr = model(image2, image1,
+            iters=iters, test_mode=True)
+        backward_flow = padder.unpad(flow_pr[0]).permute(1, 2, 0).cpu().numpy()
 
         # find out result storing paths
         fpath = image_paths[0]
@@ -154,15 +157,21 @@ def evaluate_davis(model, iters=32):
         folder_path = fpath[:ind]
         flow_folder = folder_path.replace("JPEGImages", "Flows")
         flowviz_folder = folder_path.replace("JPEGImages", "FlowVizs")
-        flow_path = os.path.join(flow_folder, f"{name}.flo")
-        flowviz_path = os.path.join(flowviz_folder, f"{name}.png")
+        flow_path = os.path.join(flow_folder, f"forward_{name}.flo")
+        flowviz_path = os.path.join(flowviz_folder, f"forward_{name}.png")
         if not os.path.exists(flow_folder):
             os.makedirs(flow_folder)
         if not os.path.exists(flowviz_folder):
             os.makedirs(flowviz_folder)
 
-        frame_utils.writeFlow(flow_path, flow)
-        Image.fromarray(flow_viz.flow_to_image(flow)).save(open(flowviz_path, "wb"), format="PNG")
+        frame_utils.writeFlow(flow_path, forward_flow)
+        Image.fromarray(flow_viz.flow_to_image(forward_flow)).save(
+            open(flowviz_path, "wb"), format="PNG")
+        flow_path = os.path.join(flow_folder, f"backward_{name}.flo")
+        flowviz_path = os.path.join(flowviz_folder, f"backward_{name}.png")
+        frame_utils.writeFlow(flow_path, backward_flow)
+        Image.fromarray(flow_viz.flow_to_image(backward_flow)).save(
+            open(flowviz_path, "wb"), format="PNG")
 
 
 @torch.no_grad()
