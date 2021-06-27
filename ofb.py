@@ -46,12 +46,10 @@ def warp(x, flo):
 
   vgrid = vgrid.permute(0,2,3,1)    
   output = F.grid_sample(x, vgrid)
-  EPS = 1e-3
-  still_area = (F.grid_sample(grid, vgrid) - grid).abs() < EPS
-  nomotion_area = (flo[:, 0].abs() < EPS) & (flo[:, 1].abs() < EPS)
-  nonstill_area = ~(still_area[:, 0] & still_area[:, 1])
-  print(nonstill_area.sum(), nomotion_area.sum(), nomotion_area.view(-1).size())
-  mask = (nonstill_area | nomotion_area).float()
+  mask = F.grid_sample(torch.ones_like(x), vgrid)
+
+  mask[mask < 0.9999] = 0
+  mask[mask > 0] = 1
 
   return output, mask
 
@@ -119,16 +117,16 @@ def train(args):
     transformer.train()
     transformer.cuda()
     agg_content_loss = agg_style_loss = agg_pixelofb_loss = 0.
-    for batch_id, (x, flow, extra_info) in enumerate(train_loader):
+    for batch_id, (x, flow, occ, _) in enumerate(train_loader):
       x, flow = x[0], flow[0]
       iters += 1
 
       optimizer.zero_grad()
       x = utils.preprocess_batch(x) # (N, 3, 256, 256)
       flow = utils.factor4_crop(flow)
+      occ = utils.factor4_crop(occ)
       if args.cuda:
-        x = x.cuda()
-        flow = flow.cuda()
+        x, flow, occ = x.cuda(), flow.cuda(), occ.cuda()
       y = transformer(x) # (N, 3, 256, 256)
 
       vgg_y = utils.subtract_imagenet_mean_batch(y)
@@ -156,16 +154,16 @@ def train(args):
       warped_y, mask = warp(y[1:], flow)
       warped_y = warped_y.detach()
       pixel_ofb_loss = args.time_strength * weighted_mse(
-        y[:-1], warped_y, mask)
+        y[:-1], warped_y, mask * occ)
 
       total_loss = content_loss + style_loss + pixel_ofb_loss
 
       total_loss.backward()
       optimizer.step()
 
-      if (iters + 1) % 10 == 0:
+      if (iters + 1) % 100 == 0:
         prefix = args.save_model_dir + "/"
-        idx = (iters + 1) // 10
+        idx = (iters + 1) // 100
         for i in range(2):
           utils.tensor_save_bgrimage(
             y.data[i], prefix + "out_%d-%d.png" % (idx, i), args.cuda)
@@ -175,8 +173,9 @@ def train(args):
             flow_image = flow_to_color(
               flow[i].detach().cpu().numpy().transpose(1,2,0))
             utils.save_image(prefix + "forward_flow_%d.png" % idx, flow_image)
-            warped_x, mask = warp(x[i+1:i+2], flow[i:i+1])
+            warped_x, _ = warp(x[i+1:i+2], flow[i:i+1])
             warped_y, mask = warp(y[i+1:i+2], flow[i:i+1])
+            mask *= occ
             utils.tensor_save_bgrimage(
               warped_y.data[0], prefix + "wout_%d-%d.png" % (idx, i), args.cuda)
             utils.tensor_save_bgrimage(

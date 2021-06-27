@@ -140,35 +140,3 @@ def flow_to_color(flow_uv, clip_flow=None, convert_to_bgr=False):
     v = v / (rad_max + epsilon)
 
     return flow_compute_color(u, v, convert_to_bgr)
-
-
-if __name__ == "__main__":
-    import argparse, glob, os
-    from utils import *
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir")
-    parser.add_argument("--out-dir", default="../download/flow_viz")
-    args = parser.parse_args()
-
-    os.system(f"mkdir {args.out_dir}")
-    print(args.out_dir)
-    # color wheel
-    img = make_colorwheel()
-    print(img.shape)
-    save_image(f"{args.out_dir}/color_wheel.png", img)
-    # original image
-    os.system(f"cp {args.data_dir}/*.jpg {args.out_dir}")
-    files = glob.glob(f"{args.data_dir}/flow_/forward*.flo")
-    files.sort()
-    num = len(files)
-
-    for i in range(num):
-        file_name = f"{args.data_dir}/flow_/forward_{i+1}_{i+2}.flo"
-        viz = flow_to_color(read_flow_file(file_name))
-        save_image(f"{args.out_dir}/forward_{i:02d}.png", viz)
-        save_image(f"{args.out_dir}/conf_{i:02d}.png",
-            read_image_file(
-                f"{args.data_dir}/flow_/reliable_{i+1}_{i+2}.pgm"))
-    os.system(f"ffmpeg -y -f image2 -i {args.out_dir}/%05d.jpg -vcodec libx264 -pix_fmt yuv420p -b:v 16000k -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" {args.out_dir}/orig.mp4")
-    os.system(f"ffmpeg -y -f image2 -i {args.out_dir}/forward_%02d.png -vcodec libx264 -pix_fmt yuv420p -b:v 16000k -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" {args.out_dir}/flow.mp4")
-    os.system(f"ffmpeg -y -f image2 -i {args.out_dir}/conf_%02d.png -vcodec libx264 -pix_fmt yuv420p -b:v 16000k -vf \"scale=trunc(iw/2)*2:trunc(ih/2)*2\" {args.out_dir}/conf.mp4")

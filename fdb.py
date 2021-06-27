@@ -75,7 +75,7 @@ def train(args):
   for e in range(args.epochs):
     agg_content_loss = agg_style_loss = agg_pixelfdb_loss = agg_featurefdb_loss = 0.
     iters = 0
-    for batch_id, (x, flow, extra_info) in enumerate(train_loader):
+    for batch_id, (x, flow, occ, _) in enumerate(train_loader):
       x = x[0]
       iters += 1
 
