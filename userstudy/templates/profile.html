@@ -1,0 +1,51 @@
+{% extends 'default.html' %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/signin.css')}}" />
+{% endblock %}
+
+{% block content %}
+
+{% for video_url in preload_video_urls %}
+<video src="video_url" hidden></video>
+{% endfor %}
+
+
+<div class="container">
+  <h2 class="form-signin-heading">If you want to update your profile (including password), submit it here.</h2>
+  <form class="form-signin" method="post">
+    <h4 class="form-signin-heading">Name</h4>
+    <p>请填写中文名</p>
+    <p>For non-Chinese fill in English name</p>
+    <input type="text" name="name" class="form-control" value={{current_user.name}} required autofocus>
+    <h4 class="form-signin-heading">Gender</h4>
+    <select name="gender" class="form-control" value={{current_user.gender}}>
+      <option value="M">男 / Male</option>
+      <option value="F">女 / Female</option>
+    </select>
+    <h4 class="form-signin-heading">Age</h4>
+    <input type="text" name="age" class="form-control" value={{current_user.age}} required>
+    <h4 class="form-signin-heading">Vision</h4>
+    <select name="vision" class="form-control" value={{current_user.vision}}>
+      <option value="normal">正常视力 / normal vision</option>
+      <option value="corrected">矫正到正常视力 / corrected to normal vision</option>
+      <option value="others">其他 / others</option>
+    </select>
+    <h4 class="form-signin-heading">Degree</h4>
+    <select name="degree" class="form-control" value={{current_user.degree}}>
+      <option value="1">本科 / Undergraduate</option>
+      <option value="2">硕士 / Master</option>
+      <option value="3">博士 / PHD</option>
+      <option value="4">其他 / Others</option>
+    </select>
+    <h4 class="form-signin-heading">Old Password</h4>
+    <input type="password" name="password" class="form-control">
+    <h4 class="form-signin-heading">New Password (Leave blank if not changing it)</h4>
+    <input type="password" name="newpassword" class="form-control">
+    <br>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Update</button>
+  </form>
+</div>
+
+
+{% endblock %}

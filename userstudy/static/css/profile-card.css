@@ -1,0 +1,98 @@
+.profile-card {
+	padding: 1rem;
+	box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12);
+	margin: 2rem 0;
+	background-color: #fff;
+}
+.profile-card img {
+	width: 8rem;
+	display: block;
+	margin: 2rem auto;
+	text-align: center;
+	border-radius: 50%;
+	box-shadow: 2px 2px 5px #888888;
+}
+.profile-card .profile-info {
+	padding: 1rem;
+}
+.profile-card .profile-info h4 {
+	margin-top: 0;
+	text-align: center;
+	text-transform: uppercase;
+}
+.profile-card .profile-info p {
+	text-align: center;
+}
+.profile-card .profile-info .inline-list {
+	text-align: center;
+	margin-bottom: 1rem;
+	margin-left: -1.375rem;
+}
+.profile-card .profile-info .inline-list li {
+	float: none;
+	display: inline-block;
+}
+.profile-card .profile-info .inline-list i.fi-mail {
+	font-size: 1.5rem;
+	color: #999;
+}
+.profile-card .profile-info .inline-list i.fi-mail:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fa-renren {
+	font-size: 1.5rem;
+}
+.profile-card .profile-info .inline-list i.fa-renren:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fa-weibo {
+	font-size: 1.5rem;
+	color: #c94d5f;
+}
+.profile-card .profile-info .inline-list i.fa-weibo:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fi-social-facebook {
+	font-size: 1.5rem;
+	color: #3b5998;
+}
+.profile-card .profile-info .inline-list i.fi-social-facebook:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fi-social-twitter {
+	font-size: 1.5rem;
+	color: #55acee;
+}
+.profile-card .profile-info .inline-list i.fi-social-twitter:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fi-social-linkedin {
+	font-size: 1.5rem;
+	color: #0077b5;
+}
+.profile-card .profile-info .inline-list i.fi-social-linkedin:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fi-social-github {
+	font-size: 1.5rem;
+	color: #333;
+}
+.profile-card .profile-info .inline-list i.fi-social-github:hover {
+	  transform: scale(1.5);
+	  transition: all .5s ease-in-out;
+}
+.profile-card .profile-info .inline-list i.fi-social-youtube {
+	font-size: 1.5rem;
+	color: #cc181e;
+}
+.profile-card .profile-info .inline-list i.fi-social-youtube:hover {
+	transform: scale(1.5);
+	transition: all .5s ease-in-out;
+}
+

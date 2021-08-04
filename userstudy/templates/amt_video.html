@@ -1,0 +1,207 @@
+<html {{manifest}}>
+  <head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Video Stability Evaluation</title>
+    <meta content="width=device-width,initial-scale=1" name="viewport" />
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/bootstrap.min.css')}}" />
+  </head>
+  <body>
+
+  <!-- HIT template: ImageAorB-v3.0 --><!-- The following snippet enables the 'responsive' behavior on smaller screens -->
+  <section class="container" id="ImageAorB"><!-- Instructions -->
+  <div class="row">
+  <div class="col-xs-12 col-md-12">
+  <div class="panel panel-primary"><!-- WARNING: the ids "collapseTrigger" and "instructionBody" are being used to enable expand/collapse feature --><a class="panel-heading" href="javascript:void(0);" id="collapseTrigger"><strong>Pick a more stable video. Please MAKE SURE your understand the instruction! </strong>&nbsp;<span class="collapse-text">(Click to collapse)</span> </a>
+  <div class="panel-body" id="instructionBody"><!-- Add instruction body content here -->
+  <p>
+  <style type="text/css">p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 19.0px; font: 13.0px 'Helvetica Neue'}
+  p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; line-height: 19.0px; font: 13.0px 'Helvetica Neue'; min-height: 15.0px}
+  </style>
+  </p>
+
+  <li class="p1">Select a more <strong>stable</strong> video.</li>
+  <li class="p1">Stable means to have <strong>less flicker</strong> between frames.</li>
+  <li class="p1">Please <strong>ONLY</strong> evaluate the stability of videos. <strong>DO NOT</strong> use any other metrics like good-looking, natural, etc.</li>
+  <li class="p1">See the example below for stable and unstable videos.</li>
+  <li class="p1">If you cannot decide which one is more stable, please randomly select one and <strong>DO NOT</strong> use any other evaluation metric. </li>
+  <p></p>
+  <p class="p1">There is a minimal of 5 seconds for every trial.</p>
+  <p class="p1">Thank you for your participation.</p>
+
+  <div style="width: 70%; margin-left: 15%; margin-right: 15%; height: 200px;">
+      <div style="width: 45%; float: left">
+          <strong style="margin-left: 30%">This is stable.</strong>
+          <img width=400px src=/static/data/gif/stable_1.gif/>
+          </div>
+      <div style="width: 45%; float: right">
+          <strong style="margin-left: 25%">This is not stable.</strong>
+          <img width=400px src=/static/data/gif/flickering_1.gif/></div>
+  </div>
+  <div style="width: 70%; margin-left: 15%; margin-right: 15%; height: 170px;">
+      <div style="width: 45%; float: left">
+          <img width=400px src=/static/data/gif/stable_2.gif/>
+          </div>
+      <div style="width: 45%; float: right">
+          <img width=400px src=/static/data/gif/flickering_2.gif/></div>
+  </div>
+
+  <div style="width: 70%; margin-left: 15%; margin-right: 15%; height: 160px;">
+      <div style="width: 45%; float: left">
+          <img width=400px src=/static/data/gif/stable_3.gif/>
+          </div>
+      <div style="width: 45%; float: right">
+          <img width=400px src=/static/data/gif/flickering_3.gif/></div>
+  </div>
+  </div>
+  </div>
+  </div>
+  </div>
+  <!-- End Instructions -->
+  <div style="width: 760px; margin: 0 auto;">
+    <p class="text-center">Experiment Set <strong>{{expr}}</strong></p>
+  <p class="text-center">Progress: {{index}} / {{len}}</p>
+  <form method="post">
+
+  <div class="con_div">
+  <div class="form-group">
+  <label class="btn btn-default img-btn">
+  <span class="clearfix img-label">
+      <input autocomplete="off" class="pull-left img-options" id="itemA" name="choice" required="" type="radio" value="optionA" /> <span class="pull-left"><strong>Option A</strong></span> 
+  </span>
+  <video autoplay="autoplay" muted="muted" loop height="300" src="{{A_url}}" id="video-A" type="vide/mp4"></video>
+  <script>
+    var promise = document.getElementById('video-A').play();
+    if (promise !== undefined) {
+      promise.then(_ => {}).catch(error => {console.log(error);});
+    }
+  </script>
+  </label>
+  </div>
+
+  </div>
+
+  <div class="con_div">
+  <div class="form-group">
+  <label class="btn btn-default img-btn">
+  <span class="clearfix img-label">
+  <input autocomplete="off" class="pull-left img-options" id="itemB" name="choice" required="" type="radio" value="optionB" />
+  <span class="pull-left">
+    <strong>Option B</strong>
+  </span>
+  </span>
+  <video autoplay="autoplay" muted="muted" loop height="300" src="{{B_url}}" id="video-B" type="vide/mp4"></video>
+  <script>
+    var promise = document.getElementById("video-B").play();
+    if (promise !== undefined) {
+      promise.then(_ => {}).catch(error => {console.log(error);});
+    }
+  </script>
+  </label>
+  </div>
+  </div>
+  <input type="hidden" name="index" value={{index}} >
+  <input type="hidden" name="uuid" value={{uuid}} >
+  <input type="hidden" name="time" value={{time}} >
+
+  {% if not admin %}
+
+  <p class="text-center"><input type="submit" id="submitButton" class="btn btn-primary" value="Submit"></p>
+  <script>
+    document.getElementById("submitButton").disabled = true;
+    setTimeout(function(){document.getElementById("submitButton").disabled = false;}, 5000);
+  </script>
+
+  {% endif %}
+  </form>
+
+  {% if admin %}
+
+  <form method="post">
+    <input type="hidden" name="action" value="prev">
+    <p class="text-center"><input type="submit" id="prevButton" class="btn btn-primary" value="Previous"></p>
+  </form>
+  
+  <form method="post">
+    <input type="hidden" name="action" value="next">
+    <p class="text-center"><input type="submit" id="nextButton" class="btn btn-primary" value="Next"></p>
+  </form>
+
+  {% endif %}
+
+  </div>
+  </section>
+
+  <p><span class="clearfix img-label"><!-- End Image A/B Layout --><!-- Please note that Bootstrap CSS/JS and JQuery are 3rd party libraries that may update their url/code at any time. Amazon Mechanical Turk (MTurk) is including these libraries as a default option for you, but is not responsible for any changes to the external libraries --><!-- External CSS references --> </span></p>
+  <link crossorigin="anonymous" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" integrity="sha384-IS73LIqjtYesmURkDE9MXKbXqYA8rvKEp/ghicjem7Vc3mGRdQRptJSz60tvrB6+" rel="stylesheet" />
+  <p><span class="clearfix img-label"><!-- Open internal style sheet -->
+  <style type="text/css">#collapseTrigger{
+    color:#fff;
+    display: block;
+    text-decoration: none;
+  }
+  #submitButton{
+    white-space: normal;
+  }
+  input.img-options{
+    margin: 3px 10px 5px 8px;
+  }
+  .img-check{
+    padding: 0;
+  }
+  .img-label{
+    padding: 6px 6px 0 6px;
+    min-width: 730px;
+    display: block;
+  }
+  .img-wrap{
+    background: transparent;
+    padding: 6px 12px;
+    display: block;
+  }
+  .img-background{
+    background: #5cb85c;
+  }
+  .img-btn{
+    padding: 0;
+    display: block;
+  }
+  .con_div{   
+  width:750px;   
+  height:330px; 
+  }
+  </style>
+  <!-- Close internal style sheet --><!-- External JS references --><script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script><script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script><!-- Open internal javascript --><script>
+  $(document).ready(function(e){
+    // Instructions expand/collapse
+    var content = $('#instructionBody');
+    var trigger = $('#collapseTrigger');
+    content.hide();
+    $('.collapse-text').text('(Click to expand)');
+    trigger.click(function(){
+      content.toggle();
+      var isVisible = content.is(':visible');
+      if(isVisible){
+        $('.collapse-text').text('(Click to collapse)');
+      }else{
+        $('.collapse-text').text('(Click to expand)');
+      }
+    });
+    // end expand/collapse
+    // Highlight selection
+    var imageBackgroundSelector = ".img-wrap";
+    var imageBackgroundElement = $(imageBackgroundSelector);
+    $("#ImageAorB input:radio").click(function(){
+      imageBackgroundElement.removeClass("img-background");
+      if($(this).is(':checked')){
+        $(this).parent().siblings(imageBackgroundSelector).addClass("img-background");
+      }else{
+        $(this).parent().siblings(imageBackgroundSelector).remove("img-background");
+      }
+    });
+    // end highlight selection
+  });
+  </script><!-- Close internal javascript--></span></p>
+  </body>
+</html>

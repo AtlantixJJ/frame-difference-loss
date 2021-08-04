@@ -1,0 +1,78 @@
+{% extends 'default.html' %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/signin.css')}}" />
+{% endblock %}
+
+{% block content %}
+
+<!--<div id="videos">
+    {% for video_url in preload_video_urls %}
+    <video preload src="{{video_url}}" hidden></video>
+    {% endfor %}
+</div>
+
+<progress id="video-progress" value="0" max="1"></progress>
+
+<script>
+    var videos = document.getElementById("videos");
+    var size = videos.children.length;
+    var pbar = document.getElementById("video-progress");
+    for (var i = 0; i < size; i ++) {
+        videos.children[i].canplay = 0;
+        videos.children[i].oncanplay = function() {this.canplay = 1;}
+    }
+
+    function showprogress(){
+        var sum = 0;
+        for (var i = 0; i < size; i ++)
+            sum += videos.children[i].canplay;
+        pbar.value = sum / size;
+        if (sum < size)
+            setTimeout(showprogress, 1000);
+    }
+
+    showprogress();
+</script>
+-->
+
+<div class="container">
+    <h2 class="form-signin-heading">Dashboard</h2>
+    <h4 class="form-signin-heading">You are logged in as {{user.name}} | <a href="/profile">Update Profile</a> | <a href="/logout">Logout</a></h4>
+
+    {% if len_completed > 0 %}
+
+    <h4 class="form-signin-heading">You have completed experiment <strong>{{completed_exprs[0] + 1}}</strong>{% for i in range(1, len_completed) %},<strong>{{completed_exprs[i] + 1}}</strong>{% endfor %}.</h4>
+
+    {% endif %}
+
+    <h2 class="form-signin-heading">Read me first!</h2>
+    <h4 class="form-signin-heading">1. Please complete experiment <strong>{{assign[0] + 1}}</strong>{% for i in range(1, len) %}, <strong>{{assign[i] + 1}}</strong>{% endfor %} <strong>in order</strong>.</h4>
+
+    <h4 class="form-signin-heading">2. When the image or video is not loaded, please wait and don't refresh too frequently.</h4>
+
+    <h4 class="form-signin-heading">3. Please carefully read and understand the instructions in the experiment page.</h4>
+
+    <h4 class="form-signin-heading">4. Use laptop rather than a tablet or mobile phone to complete the experiment. Chrome is recommended browser.</h4>
+
+    <h4 class="form-signin-heading">Thank you for your participation.</h4>
+
+    {% for i in range(len) %} 
+
+    <h3 class="form-signin-heading">Experiment Set <strong>{{assign[i] + 1}}</strong> {{status[i]}} {% if not fin[i] %}<a href="vsloss/{{assign[i]+1}}">Continue</a>{% endif %}</h3>
+
+    {% endfor %} 
+
+    {% if current_finish %}
+
+    <h4 class="form-signin-heading">Congratulation! You completed all the experiment.</h4>
+
+    <h4 class="form-signin-heading">Now you can exit or do more experiment to get more reward.</h4>
+
+    <h4 class="form-signin-heading"><a href="/enroll/1">Enroll</a> in next experiment.</h4>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

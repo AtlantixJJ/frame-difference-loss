@@ -1,0 +1,14 @@
+{% extends 'default.html' %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/signin.css')}}" />
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="form-signin-heading">{{message}}</h2>
+    </div>
+    <div class="container">
+        <h2 class="form-signin-heading"><a href={{href}}>Continue</a></h2>
+    </div>
+{% endblock %}

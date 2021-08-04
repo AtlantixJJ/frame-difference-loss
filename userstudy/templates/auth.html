@@ -1,0 +1,20 @@
+{% extends 'default.html' %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/signin.css')}}" />
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+
+      <form class="form-signin" method="post">
+        <h2 class="form-signin-heading">Authorization</h2>
+        <input type="text" name="inputID" class="form-control" placeholder="User Name" required autofocus>
+        <input type="password" name="inputPassword" class="form-control" placeholder="Password" required>
+        <button class="btn btn-lg btn-primary btn-block" type="submit">Authorize</button>
+        <br>
+        <h4 class="form-signin-heading">Please <a href="/register">register</a> first.</h4>
+      </form>
+    </div>
+
+{% endblock %}

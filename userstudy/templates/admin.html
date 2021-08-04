@@ -1,0 +1,29 @@
+{% extends 'default.html' %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename='css/signin.css')}}" />
+    <script src="{{url_for('static', filename='js/jquery-2.1.1.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/jquery.csv-0.71.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/showcsv.js')}}"></script>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h2 class="form-signin-heading">
+            Open files: {{opened_files}}
+        </h2>
+        <h2 class="form-signin-heading">
+            <a href="/admin/user" download="user.csv">User Status</a>
+        </h2>
+        <div id="csv-display-user"></div>
+        <script>showcsv("admin/user", "#csv-display-user");</script>
+        <h2 class="form-signin-heading">
+            <a href="/admin/expr" download="expr.csv">Experiment Status</a>
+        </h2>
+        <div id="csv-display-expr"></div>
+        <script>showcsv("admin/expr", "#csv-display-expr");</script>
+        <h2 class="form-signin-heading">
+            <a href="/admin/full" download="full.csv">Full Record</a>
+        </h2>
+    </div>
+{% endblock %}

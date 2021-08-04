@@ -6,5 +6,7 @@ data/MPI-Sintel-complete/
 data/DAVIS
 data/testout
 data/testin
-data/userstudy
+userstudy/access_code
+userstudy/sync
+userstudy/sync.lock
 __pycache__

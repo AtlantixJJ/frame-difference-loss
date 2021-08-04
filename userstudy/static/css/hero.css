@@ -1,0 +1,66 @@
+.hero {
+	background: url("/static/img/bitcoin_background.jpg") no-repeat center center;
+	background-size: cover;
+	height: 100vh; 
+}
+.hero:before {
+	content: '';
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background-image: linear-gradient(to bottom right, #002f4b, #dc4225);
+	opacity: .8;
+}
+.hero .intro {
+	padding: 3rem;
+	position: relative;
+	top: 50%;
+	transform: translateY(-50%);
+}
+.hero h1 {
+	color: #fff;
+	font-size: 1.5rem;
+	line-height: 1.5em;
+	letter-spacing: -0.025em;
+	font-weight: 300;
+	text-align: center;
+}
+.hero p {
+	color: #fff;
+	line-height: 1.75em;
+	font-weight: 200;
+	text-align: center;
+	margin-bottom: 2rem;
+}
+.hero .btnbox {
+	width: 100%;
+	text-align: center;
+}
+.hero .tech-img {
+	background: url("/static/img/logo.png") no-repeat center center;
+	background-size: cover;
+	height: 9rem;
+	width: 9rem;
+	border-radius: 50%;
+	display: block;
+	margin: 0 auto;
+}
+@media only screen and (min-width: 40.063em) {
+	.hero .tech-img {
+		height: 18rem;
+		width: 18rem;
+	}
+	.hero h1 {
+		padding-top: 2.5rem;
+		text-align: left;
+		font-size: 2.5rem;
+	}
+	.hero p {
+		text-align: left;
+	}
+	.hero .btnbox {
+		text-align: left;
+	}
+}

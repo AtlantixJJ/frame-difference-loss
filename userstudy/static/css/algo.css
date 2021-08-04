@@ -1,0 +1,35 @@
+#left-panel {
+	height: 50%;
+}
+#right-panel {
+	height: 50%;
+}
+@media only screen and (min-width: 40.063em) {
+	#left-panel {
+		height: 100%;
+	}
+	#right-panel {
+		height: 100%;
+	}
+}
+.CodeMirror {
+	width: 100% !important;
+	height: 100% !important;
+} 
+#chart-box {
+	height: 60%;
+}
+#chart {
+	width: 99%;
+	height: 100%;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+}
+#info-box {
+	height: calc(40% - 53px);
+	overflow: auto;
+	margin-top: 5px;
+	padding: 5px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+}
