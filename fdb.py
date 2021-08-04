@@ -98,31 +98,31 @@ def train(args):
       y = utils.subtract_imagenet_mean_batch(y)
       x = utils.subtract_imagenet_mean_batch(x)
 
-      features_y = vgg(y)
-      features_xc = vgg(x)
+      f_y = vgg(y)
+      f_c = f_y[2]
+      with torch.no_grad():
+        f_x = vgg(x)
+        f_xc_c = f_x[2]
       
-      #content target
-      f_xc_c = features_xc[2].detach()
-      # content
-      f_c = features_y[2]
-
       content_loss = args.content_weight * mse_loss(f_c, f_xc_c)
 
       style_loss = 0.
-      for m in range(len(features_y)):
+      for m in range(len(f_y)):
         gram_s = gram_style[m]
-        gram_y = utils.gram_matrix(features_y[m])
+        gram_y = utils.gram_matrix(f_y[m])
         batch_style_loss = 0
         for n in range(gram_y.shape[0]):
-          batch_style_loss += args.style_weight * mse_loss(gram_y[n], gram_s[0])
+          batch_style_loss += args.style_weight * mse_loss(
+            gram_y[n], gram_s[0])
         style_loss += batch_style_loss / gram_y.shape[0]
         
       # FDB
-      pixel_fdb_loss = args.time_strength1 * mse_loss(y[1:] - y[:-1], x[1:] - x[:-1])
+      pixel_fdb_loss = args.time_strength1 * mse_loss(
+        y[1:] - y[:-1], x[1:] - x[:-1])
       # temporal content: 16th
       feature_fdb_loss = args.time_strength2 * l1_loss(
-        features_y[2][1:] - features_y[2][:-1],
-        features_xc[2][1:] - features_xc[2][:-1])
+        f_y[2][1:] - f_y[2][:-1],
+        f_x[2][1:] - f_x[2][:-1])
 
       total_loss = content_loss + style_loss + pixel_fdb_loss + feature_fdb_loss
 
@@ -175,7 +175,7 @@ def main():
     type=float, default=10.0,
     help="pixel FDB weight")
   train_arg_parser.add_argument("--time-strength2",
-    type=float, default=400.0,
+    type=float, default=600.0,
     help="feature FDB weight")
   train_arg_parser.add_argument("--content-weight",
     type=float, default=1.0,

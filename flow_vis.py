@@ -88,13 +88,12 @@ def flow_compute_color(u, v, convert_to_bgr=False):
     a = np.arctan2(-v, -u)/np.pi
 
     fk = (a+1) / 2*(ncols-1) + 1
-    k0 = np.floor(fk).astype(np.int32)
-    k1 = k0 + 1
+    k0 = np.floor(fk).astype(np.int32).clip(0, 54)
+    k1 = (k0 + 1).clip(0, 54)
     k1[k1 == ncols] = 1
     f = fk - k0
 
     for i in range(colorwheel.shape[1]):
-
         tmp = colorwheel[:,i]
         col0 = tmp[k0] / 255.0
         col1 = tmp[k1] / 255.0
@@ -122,15 +121,14 @@ def flow_to_color(flow_uv, clip_flow=None, convert_to_bgr=False):
     :param clip_flow: float, maximum clipping value for flow
     :return:
     '''
-
-    assert flow_uv.ndim == 3, 'input flow must have three dimensions'
-    assert flow_uv.shape[2] == 2, 'input flow must have shape [H,W,2]'
-
     if clip_flow is not None:
         flow_uv = np.clip(flow_uv, 0, clip_flow)
 
-    u = flow_uv[:,:,0]
-    v = flow_uv[:,:,1]
+    if flow_uv.shape[2] == 2:
+        u = flow_uv[:,:,0]
+        v = flow_uv[:,:,1]
+    elif flow_uv.shape[0] == 2:
+        u, v = flow_uv[0], flow_uv[1]
 
     rad = np.sqrt(np.square(u) + np.square(v))
     rad_max = np.max(rad)

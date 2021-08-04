@@ -88,7 +88,6 @@ def train(args):
     transformer.conv1 = transformer_net.ConvLayer(6, 32, kernel_size=9, stride=1, pad_type=args.pad_type)
   optimizer = torch.optim.Adam(transformer.parameters(), args.lr)
   mse_loss = torch.nn.MSELoss()
-  l1_loss = torch.nn.SmoothL1Loss()
 
   vgg = Vgg16()
   vgg.load_state_dict(torch.load(os.path.join(
@@ -99,7 +98,6 @@ def train(args):
     transformer.cuda()
     vgg.cuda()
     mse_loss.cuda()
-    l1_loss.cuda()
 
   style = utils.tensor_load_resize(args.style_image, args.style_size)
   style = style.unsqueeze(0)
@@ -111,17 +109,16 @@ def train(args):
   utils.tensor_save_bgrimage(style[0].detach(), os.path.join(args.save_model_dir, 'train_style.jpg'), args.cuda)
   style = utils.subtract_imagenet_mean_batch(style)
   features_style = vgg(style)
-  gram_style = [utils.gram_matrix(y).detach() for y in features_style]
+  gram_style = [utils.gram_matrix(y).detach()
+    for y in features_style]
   iters = 0
   for e in range(args.epochs):
     transformer.train()
     transformer.cuda()
-    agg_content_loss = agg_style_loss = agg_pixelofb_loss = 0.
     for batch_id, (x, flow, occ, _) in enumerate(train_loader):
       x, flow = x[0], flow[0]
       iters += 1
 
-      optimizer.zero_grad()
       x = utils.preprocess_batch(x) # (N, 3, 256, 256)
       flow = utils.factor4_crop(flow)
       occ = utils.factor4_crop(occ)
@@ -133,12 +130,10 @@ def train(args):
       vgg_x = utils.subtract_imagenet_mean_batch(x)
       
       f_y = vgg(vgg_y)
-      f_x = vgg(vgg_x)
-      
-      #content target
-      f_xc_c = f_x[2].detach()
-      # content
       f_c = f_y[2]
+      with torch.no_grad():
+        f_x = vgg(vgg_x)
+      f_xc_c = f_x[2]
 
       content_loss = args.content_weight * mse_loss(f_c, f_xc_c)
 
@@ -148,9 +143,10 @@ def train(args):
         gram_y = utils.gram_matrix(f_y[m])
         batch_style_loss = 0
         for n in range(gram_y.shape[0]):
-          batch_style_loss += args.style_weight * mse_loss(gram_y[n], gram_s[0])
+          batch_style_loss += args.style_weight * mse_loss(
+            gram_y[n], gram_s[0])
         style_loss += batch_style_loss / gram_y.shape[0]
-          
+
       warped_y, mask = warp(y[1:], flow)
       warped_y = warped_y.detach()
       pixel_ofb_loss = args.time_strength * weighted_mse(
@@ -160,42 +156,32 @@ def train(args):
 
       total_loss.backward()
       optimizer.step()
+      optimizer.zero_grad()
 
+      """
       if (iters + 1) % 100 == 0:
-        prefix = args.save_model_dir + "/"
+        prefix = args.save_model_dir
         idx = (iters + 1) // 100
-        for i in range(2):
+        for i in range(x.shape[0]):
           utils.tensor_save_bgrimage(
-            y.data[i], prefix + "out_%d-%d.png" % (idx, i), args.cuda)
+            y.data[i], f"{prefix}/out_{idx}-{i}.png", args.cuda)
           utils.tensor_save_bgrimage(
-            x.data[i], prefix + "in_%d-%d.png" % (idx, i), args.cuda)
-          if i < warped_y.shape[0]:
+            x.data[i], f"{prefix}/in_{idx}-{i}.png", args.cuda)
+          if i < flow.shape[0]:
             flow_image = flow_to_color(
-              flow[i].detach().cpu().numpy().transpose(1,2,0))
-            utils.save_image(prefix + "forward_flow_%d.png" % idx, flow_image)
+              flow.data[i].cpu().numpy().transpose(1,2,0))
+            utils.save_image(f"{prefix}/forward_flow_{idx}-{i}.png", flow_image)
             warped_x, _ = warp(x[i+1:i+2], flow[i:i+1])
-            warped_y, mask = warp(y[i+1:i+2], flow[i:i+1])
-            mask *= occ
             utils.tensor_save_bgrimage(
-              warped_y.data[0], prefix + "wout_%d-%d.png" % (idx, i), args.cuda)
+              warped_y.data[0], f"{prefix}/wout_{idx}-{i}.png", args.cuda)
             utils.tensor_save_bgrimage(
-              warped_x.data[0], prefix + "win_%d-%d.png" % (idx, i), args.cuda)
-            utils.tensor_save_image(
-              prefix + "conf_%d-%d.png" % (idx, i), mask.data[0])
-            
-      agg_content_loss += content_loss.data
-      agg_style_loss += style_loss.data
-      agg_pixelofb_loss += pixel_ofb_loss.data
-
-      agg_total = agg_content_loss + agg_style_loss + agg_pixelofb_loss
+              warped_x.data[0], f"{prefix}/win_{idx}-{i}.png", args.cuda)
+            utils.tensor_save_image(f"{prefix}/conf_{idx}-{i}.png", mask.data[0])
+      """
       mesg = "{}\tEpoch {}:\t[{}/{}]\tcontent: {:.6f}\tstyle: {:.6f}\tpixel ofb: {:.6f}\ttotal: {:.6f}".format(
         time.ctime(), e + 1, batch_id + 1, len(train_loader),
-        agg_content_loss / iters,
-        agg_style_loss / iters,
-        agg_pixelofb_loss / iters,
-        agg_total / iters)
+        content_loss, style_loss, pixel_ofb_loss, total_loss)
       print(mesg)
-      agg_content_loss = agg_style_loss = agg_pixelofb_loss = 0.0
 
     # save model
     transformer.eval()

@@ -163,7 +163,7 @@ def process_dataloader(args, net, dl):
       os.mkdir(out_base)
     if not os.path.exists(out_path[:ind]):
       os.mkdir(out_path[:ind])
-      prev_dir_name = out_path[:ind]
+
     if x.size(2) % 4 != 0 or x.size(3) % 4 != 0:
       y = F.pad(x, (-w1, -w2, -h1, -h2), 'reflect')
     tensor_save_bgrimage(y.data[0], out_path, True)

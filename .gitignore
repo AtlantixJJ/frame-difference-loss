@@ -6,4 +6,5 @@ data/MPI-Sintel-complete/
 data/DAVIS
 data/testout
 data/testin
+data/userstudy
 __pycache__
