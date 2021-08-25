@@ -21,6 +21,7 @@ def center_crop(x, h, w):
   ddh, ddw = dh // 2, dw // 2
   return x[:, :, ddh:-(dh-ddh), ddw:-(dw-ddw)]
 
+
 def train(args):
   np.random.seed(args.seed)
   torch.manual_seed(args.seed)

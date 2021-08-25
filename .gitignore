@@ -7,6 +7,9 @@ data/DAVIS
 data/testout
 data/testin
 userstudy/access_code
+userstudy/database
 userstudy/sync
 userstudy/sync.lock
+userstudy/static/expr/video
+userstudy/static/expr/frame
 __pycache__

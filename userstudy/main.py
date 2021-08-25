@@ -2,18 +2,10 @@
 """
 python main.py <port>
 """
-import uuid, time
-import json
-import sys
-import random
+import time, json, sys, random, csv, util, glob, psutil
 from flask import Flask, request, redirect, url_for
 from flask import render_template, make_response
 import flask_login, flask_bcrypt
-import csv
-import util
-import glob
-import copy 
-import psutil
 
 proc = psutil.Process()
 application = Flask(__name__)
@@ -23,77 +15,42 @@ login_manager.init_app(application)
 bcrypt = flask_bcrypt.Bcrypt(application)
 
 PRELOAD_LEN = 10
+N_GROUP = 3
 config = []
 group_assign = []
-group_preload_video_list = []
-group_preload_image_list = []
 appcache = []
 
 # read into the expr list
 def init():
     global config
     global group_assign
-    global group_preload_image_list
-    global group_preload_video_list
     global appcache
 
     config = []
-    #expr_lists = glob.glob("static/data2/expr/*.csv")
-    #expr_lists.sort()
     expr_lists = [
-        "frame_quality_sfn_comb_diff.csv",
-        "frame_quality_sfn_comb_none.csv",
-        "frame_quality_sfn_diff_flow.csv",
-        "frame_quality_sfn_diff_none.csv",
-        "frame_quality_sfn_flow_none.csv",
-        "frame_quality_sfn_comb_msra.csv",
-        "frame_quality_rnn_comb_flow.csv",
-        "frame_quality_rnn_comb_none.csv",
-        "video_stability_sfn_comb_diff.csv",
-        "video_stability_sfn_comb_none.csv",
-        "video_stability_sfn_diff_flow.csv",
-        "video_stability_sfn_diff_none.csv",
-        "video_stability_sfn_flow_none.csv",
-        "video_stability_sfn_comb_msra.csv",
-        "video_stability_rnn_comb_flow.csv",
-        "video_stability_rnn_comb_none.csv"]
-    expr_lists = ["static/data/expr/" + e for e in expr_lists]
+        "rnn_c-fdb_ofb_frame.csv",
+        "sfn_c-fdb_ofb_frame.csv",
+        "sfn_c-fdb_p-fdb_frame.csv",
+        "rnn_c-fdb_ofb_video.csv",
+        "sfn_c-fdb_ofb_video.csv",
+        "sfn_c-fdb_p-fdb_video.csv"]
+    expr_lists = ["static/expr/csv/" + e for e in expr_lists]
     
     for index, csv_file in enumerate(expr_lists):
         print("=> Set %d: %s" % (index + 1, csv_file))
         header, lists = util.read_csv(csv_file)
-        amt_str = "https://raw.githubusercontent.com/AtlantixJJ/VideoStableData/master/"
-        #local_str = "/static/data2/"
+        local_str = "static/expr/"
         local_str = "https://atlantixjj.coding.net/p/VideoStableData/d/VideoStableData/git/raw/master/"
-        for i in range(len(lists)):
-            for j in range(len(lists[i])):
-                lists[i][j] = lists[i][j].replace(amt_str, local_str).replace("frame_rnn_none", "frame_sfn_none").replace("video_rnn_none", "video_sfn_none")
-        dic = {"header" : header,
+        dic = {
+            "header" : header,
             "csv_file" : csv_file,
             "len"    : len(lists[0])}
         for i in range(len(header)):
             dic[header[i]] = lists[i]
-
         config.append(dic)
-    
-    # hardcode : 16 experiments divide into 8 groups
-    group_assign = [[i, i + 8] for i in range(8)]
-    # last group: full
+
+    group_assign = [[i, i + N_GROUP] for i in range(N_GROUP)]
     group_assign.append(list(range(len(expr_lists))))
-    # calculate preload list
-    for i, inds in enumerate(group_assign):
-        ilist = []
-        vlist = []
-        for ind in inds:
-            if ind < 8:
-                ilist.extend([config[ind]["A_url"], config[ind]["B_url"]])
-            else:
-                vlist.extend([config[ind]["A_url"], config[ind]["B_url"]])
-        group_preload_image_list.append(sum(ilist, []))
-        group_preload_video_list.append(sum(vlist, []))
-        # create app cache list
-        #appcache.append(util.appcache(
-        #    group_preload_image_list[-1] + group_preload_video_list[-1], f"static/expr{i}.appcache"))
 
 
 @application.route("/vsloss/<int:expr_id>", methods=["GET", "POST"])
@@ -112,9 +69,9 @@ def vsloss(expr_id):
             manifest="")
 
     if "image_url" in config[expr_id]["header"]:
-        return doublerate(expr_id, "amt_image.html")
+        return two_afc(expr_id, "amt_image.html")
     else:
-        return doublerate(expr_id, "amt_video.html")
+        return two_afc(expr_id, "amt_video.html")
 
 
 @login_manager.user_loader
@@ -275,8 +232,6 @@ def profile():
         return render_template("profile.html",
             manifest="",#f"manifest=/manifest/{group}"
             )
-            #preload_video_urls=group_preload_video_list[group][:PRELOAD_LEN],
-            #preload_image_urls=group_preload_image_list[group][:PRELOAD_LEN])
 
     if "password" not in request.form.keys():
         return render_template("message.html",
@@ -419,13 +374,9 @@ def unauthorized():
         manifest="")
 
 
-def doublerate(expr_id, page):
+def two_afc(expr_id, page):
     cfg = config[expr_id]
     user = flask_login.current_user
-    group = util.group_from_id(user.id)
-
-    maxi = len(group_preload_video_list[group])
-    share = PRELOAD_LEN
 
     if request.method == "GET":
         index = user.status[expr_id] + 1
@@ -476,19 +427,12 @@ def doublerate(expr_id, page):
 
     index = user.status[expr_id] + 1
     if index <= cfg["len"]:
-        bg, ed = (index - 1) * share, index * share
-        ed = min(maxi, ed + share)
-        #ilist = group_preload_image_list[group][bg:ed]
-        #vlist = group_preload_video_list[group][bg:ed]
         dic = {
             "index" : index,
             "len" : cfg["len"],
             "expr" : expr_id + 1,
             "manifest" : "",#f"manifest=/manifest/{group}",
             "admin" : user.id == util.ADMIN_ID
-            #"preload_len" : len(ilist),
-            #"preload_video_urls" : vlist,
-            #"preload_image_urls" : ilist
             }
         for h in cfg["header"]:
             dic[h] = cfg[h][index - 1]

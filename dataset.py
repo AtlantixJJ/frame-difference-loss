@@ -48,9 +48,10 @@ class CustomImageDataset(Dataset):
 
 
 class FlowDataset(Dataset):
-  def __init__(self, no_flow=False):
+  def __init__(self, no_flow=False, crop_size=-1):
     self.augmentor = None
     self.no_flow = no_flow
+    self.crop_size = crop_size
 
     self.flow_list = []
     self.image_list = []
@@ -80,7 +81,15 @@ class FlowDataset(Dataset):
         mask = torch.from_numpy(mask).float()
         masks.append(mask / mask.max())
       flows = torch.stack(flows)
-      masks = torch.stack(masks)
+      masks = torch.stack(masks).unsqueeze(1)
+    if self.crop_size != -1:
+      ch, cw = self.crop_size
+      n, c, h, w = imgs.shape
+      dh = torch.randint(0, h - ch, (1,))[0]
+      dw = torch.randint(0, w - cw, (1,))[0]
+      imgs = imgs[..., dh:dh+ch, dw:dw+cw]
+      flows = flows[..., dh:dh+ch, dw:dw+cw]
+      masks = masks[..., dh:dh+ch, dw:dw+cw]
     return imgs, flows, masks, self.extra_info[index]
 
   def __rmul__(self, v):
@@ -95,7 +104,7 @@ class FlowDataset(Dataset):
 class DAVISDataset(FlowDataset):
   def __init__(self,
     data_dir="data/DAVIS", split="train", no_flow=True,
-    seq_size=2, interval=1):
+    seq_size=2, interval=1, crop_size=(400, 400)):
     """
     Args:
       split: train, val, test.
@@ -106,6 +115,7 @@ class DAVISDataset(FlowDataset):
     self.data_dir = data_dir
     self.split = split
     self.is_test = no_flow
+    self.crop_size = crop_size
     vnames = open(osp.join(self.data_dir, "ImageSets", "2017",
       f"{split}.txt")).read().split("\n")[:-1]
     image_dir = osp.join(self.data_dir, "JPEGImages", "480p")

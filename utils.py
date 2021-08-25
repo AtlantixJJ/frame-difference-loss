@@ -132,7 +132,6 @@ def factor4_crop(x):
 
 
 def process_dataloader(args, net, dl):
-  prev_dir_name = ""
   # generate image
   for idx, (x, _) in enumerate(dl):
     x = preprocess_batch(x).cuda()

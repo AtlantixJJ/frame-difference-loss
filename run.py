@@ -6,7 +6,10 @@ import argparse, sys, os, time, glob
 
 
 def find_model_from_dir(model, loss_type, style_name):
-    init_dir = f"{model}_{loss_type}_{style_name}_interpolate-detach"
+    if model == "rnn":
+        init_dir = f"sfn_{loss_type}_{style_name}_interpolate-detach"
+    else:
+        init_dir = f"{model}_{loss_type}_{style_name}_interpolate-detach"
     init_model = glob.glob(f"exprs/{init_dir}/*.model")
     if len(init_model) != 1:
         print(f"!> Fail to find initialization needed for {model} {style_name} from exprs/{init_dir}")
