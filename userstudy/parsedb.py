@@ -48,7 +48,7 @@ def inc_key_choice(key, choice, dic):
 
 # return the loss of video
 def get_loss(name):
-    ts = ['none', 'diff', 'comb', 'msra', 'flow', 'zero']
+    ts = ['none', 'p-fdb', 'c-fdb', 'ofb']
     name = name[name.rfind("/")+1:]
     for t in ts:
         if t in name:
@@ -78,7 +78,6 @@ def get_exprs():
             print("!> Error in id={} expr={}".format(
                 obj["id"], obj["expr_id"]))
             continue
-        
         expr_id = obj["expr_id"]
         lossA = get_loss(obj["optionA"][0])
         lossB = get_loss(obj["optionB"][0])
@@ -109,11 +108,11 @@ def get_exprs():
         compare_type = list(dic.keys())[0]
         dic = list(dic.values())[0]
         total = sum(list(dic.values()))
-        video, model, compare_type = compare_type.split("/")
-        main = compare_type.split(" <- ")[0]
-        if main not in dic.keys():
-            dic[main] = 0
-        ratio = dic[main] / float(total)
+        video, model, cm = compare_type.split("/")
+        left = cm.split(" <- ")[0]
+        if left not in dic.keys():
+            dic[left] = 0
+        ratio = dic[left] / float(total)
 
         # get style dic
         style_dic = {}
@@ -121,9 +120,10 @@ def get_exprs():
             dic = style_compare_dic[i][expr_id]
             if dic == {}:
                 continue
-
             dic = list(dic.values())[0]
-            style_dic[s] = dic[main] / float(sum(list(dic.values())))
+            if left not in dic.keys():
+                dic[left] = 0
+            style_dic[s] = dic[left] / float(sum(list(dic.values())))
 
         summary.update(
             {"expr_id" : expr_id},
@@ -131,7 +131,7 @@ def get_exprs():
                 "video/frame" : video,
                 "model" : model,
                 "name" : compare_type,
-                main : ratio,
+                left : ratio,
                 "total" : total,
                 "styles" : style_dic
             })

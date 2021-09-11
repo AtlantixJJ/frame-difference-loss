@@ -15,9 +15,9 @@ collection = db.score
 userdb = db.user
 per = np.random.permutation(np.arange(45))
 
-EXPR_SEP = 8
-EXPR_NUM = 16
-EXPR_SIZE = 15
+EXPR_SEP = 3
+EXPR_NUM = 6
+EXPR_SIZE = 20
 
 class User(flask_login.UserMixin):
     def __init__(self):

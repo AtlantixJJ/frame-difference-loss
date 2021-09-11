@@ -70,7 +70,7 @@
   <span class="clearfix img-label">
       <input autocomplete="off" class="pull-left img-options" id="itemA" name="choice" required="" type="radio" value="optionA" /> <span class="pull-left"><strong>Option A</strong></span> 
   </span>
-  <video autoplay="autoplay" muted="muted" loop height="300" src="{{A_url}}" id="video-A" type="vide/mp4"></video>
+  <video autoplay="autoplay" muted="muted" loop height="300" src="/{{video_A_path}}" id="video-A" type="vide/mp4"></video>
   <script>
     var promise = document.getElementById('video-A').play();
     if (promise !== undefined) {
@@ -91,7 +91,7 @@
     <strong>Option B</strong>
   </span>
   </span>
-  <video autoplay="autoplay" muted="muted" loop height="300" src="{{B_url}}" id="video-B" type="vide/mp4"></video>
+  <video autoplay="autoplay" muted="muted" loop height="300" src="/{{video_B_path}}" id="video-B" type="vide/mp4"></video>
   <script>
     var promise = document.getElementById("video-B").play();
     if (promise !== undefined) {

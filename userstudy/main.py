@@ -52,7 +52,6 @@ def init():
     group_assign = [[i, i + N_GROUP] for i in range(N_GROUP)]
     group_assign.append(list(range(len(expr_lists))))
 
-
 @application.route("/vsloss/<int:expr_id>", methods=["GET", "POST"])
 @flask_login.login_required
 def vsloss(expr_id):
@@ -68,7 +67,7 @@ def vsloss(expr_id):
             href="/",
             manifest="")
 
-    if "image_url" in config[expr_id]["header"]:
+    if "style_path" in config[expr_id]["header"]:
         return two_afc(expr_id, "amt_image.html")
     else:
         return two_afc(expr_id, "amt_video.html")
@@ -118,11 +117,13 @@ def logout():
         href=url_for("auth"),
         manifest="")
 
+
 @application.route("/manifest/<int:t>")
 def manifest(t):
     res = make_response(appcache[t])
     res.headers["Content-Type"] = "text/cache-manifest"
     return res
+
 
 @application.route("/")
 @flask_login.login_required
@@ -137,6 +138,7 @@ def index_user(user):
     group = util.group_from_id(user.id)
     if user.id == util.ADMIN_ID:
         group = len(group_assign) - 1
+    print(user.id, group, len(group_assign))
     assign = group_assign[group]
     status = user.status
     lens = [config[i]["len"] for i in assign]
@@ -173,6 +175,7 @@ def index_user(user):
 def enroll(t):
     return enroll_user(flask_login.current_user, t)
     
+
 def enroll_user(user, t):
     if user.empty:
         return redirect("/register")
@@ -389,6 +392,7 @@ def two_afc(expr_id, page):
             }
         for h in cfg["header"]:
             dic[h] = cfg[h][index - 1]
+        print(dic)
         return render_template(page, **dic)
     print(request.form)
     if util.ADMIN_ID == user.id:
@@ -414,8 +418,11 @@ def two_afc(expr_id, page):
     index = int(request.form["index"])
     addr = request.remote_addr
     choice = 0 if choice == "optionA" else 1
-
-    file1, file2 = cfg["A_url"][index - 1], cfg["B_url"][index - 1]
+    if "style_path" in cfg["header"]:
+        A_key, B_key = "frame_A_path", "frame_B_path"
+    else:
+        A_key, B_key = "video_A_path", "video_B_path"
+    file1, file2 = cfg[A_key][index - 1], cfg[B_key][index - 1]
     print("=> file: %s %s" % (file1, file2))
     print("=> Choice: %d" % choice)
 
@@ -443,6 +450,7 @@ def two_afc(expr_id, page):
             message=s % (expr_id + 1),
             href=url_for("index"),
             manifest="")
+
 
 if __name__ == "__main__":
     init()

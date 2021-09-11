@@ -9,6 +9,13 @@ SEED = {
 }
 
 
+def stylename(x):
+  styles = ["starrynight", "lamuse", "feathers", "composition"]
+  for s in styles:
+    if s in x:
+      return s
+
+
 def extract_frames(dic):
   for k, v in dic.items():
     indice = np.unique(np.array(v))
@@ -23,8 +30,14 @@ def extract_frames(dic):
 
 
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--extract", default=0, type=int,
+    help="If to extract frames from videos, or generate lists only.")
+  args = parser.parse_args()
+    
   files = glob.glob("static/expr/csv/*video.csv")
   files.sort()
+  dic = {}
   for f in files:
     csv_reader = csv.reader(open(f, "r"), dialect='excel')
     header = next(csv_reader)
@@ -33,7 +46,6 @@ if __name__ == "__main__":
         break
     rng = np.random.RandomState(v)
     lists = []
-    dic = {}
     while True:
       try:
         vp1, vp2 = next(csv_reader)
@@ -49,18 +61,22 @@ if __name__ == "__main__":
         dic[vp2] = [idx]
       else:
         dic[vp2].append(idx)
-      fp1 = vp1.replace("video", "frame").replace(".mp4", f"_{idx:05d}.jpg")
-      fp2 = vp2.replace("video", "frame").replace(".mp4", f"_{idx:05d}.jpg")
+      fp1 = vp1.replace("video", "frame").replace(".mp4", f"_{idx:04d}.jpg")
+      fp2 = vp2.replace("video", "frame").replace(".mp4", f"_{idx:04d}.jpg")
       lists.append([fp1, fp2])
     rng.shuffle(lists)
     for i in range(len(lists)):
       rng.shuffle(lists[i])
+    for i in range(len(lists)):
+      sname = stylename(lists[i][0])
+      lists[i] += [f"static/image/{sname}.jpg"]
     
     csv_fpath = f.replace("video", "frame")
     csv_writer = csv.writer(open(csv_fpath, "w"), dialect='excel')
-    header = ["frame_A_path", "frame_B_path"]
+    header = ["frame_A_path", "frame_B_path", "style_path"]
     csv_writer.writerow(header)
     for p in lists:
         csv_writer.writerow(p)
 
-  extract_frames(dic)
+  if args.extract:
+    extract_frames(dic)

@@ -19,6 +19,12 @@ if sys.argv[1] == "score":
         obj = cursor.next()
         print(obj)
 
+# clear the database
+if sys.argv[1] == "clear":
+    collection.drop()
+    userdb.drop()
+
+
 # access user database
 if sys.argv[1] == "user":
     cursor = userdb.find()
@@ -184,10 +190,9 @@ if sys.argv[1] == "sync":
     occupied_inds.sort()
     print(occupied_inds)
 
-    s = list("0" * 160)
+    s = list("0" * util.EXPR_NUM * util.EXPR_SIZE)
     for ind in occupied_inds:
         s[ind] = "1"
-    s[17] = "1" # a duplicate bug
     with lock:
         util.write_sync("".join(s))
         print("Next to occupy: %s" % util.get_next_id(util.read_sync()))
